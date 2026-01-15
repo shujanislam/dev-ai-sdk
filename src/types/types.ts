@@ -3,3 +3,10 @@ export type Provider = {
   prompt: string;
   raw?: boolean;
 }
+
+export type Output = {
+  data: string;
+  provider: string;
+  model: string;
+  raw?: any;
+}
