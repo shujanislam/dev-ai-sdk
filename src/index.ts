@@ -3,7 +3,7 @@ import { genChat } from './client.ts';
 import { SDKError } from './core/error';
 
 const ai = new genChat({
-  google: { apiKey: 'AIzaSyA328_DEtYplxiG5v70pp5fcu3oTGA-NvQ' },
+  google: { apiKey: 'API_KEY' },
 });
 
 const res = await ai.googleGenerate({
