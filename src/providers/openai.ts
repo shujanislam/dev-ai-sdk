@@ -1,11 +1,12 @@
 import type { Provider } from '../types/types';
+import { SDKError } from '../core/error';
 
-export async function openaiProvider(provider: Provider): Promise<string> {
+export async function openaiProvider(provider: Provider, apiKey: string): Promise<string> {
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${provider.apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: provider.model,
@@ -16,7 +17,7 @@ export async function openaiProvider(provider: Provider): Promise<string> {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(`OpenAI error ${res.status}: ${JSON.stringify(data)}`);
+    throw new SDKError(`OpenAI error ${res.status}: ${JSON.stringify(data)}`, 'OpenAI');
   }
 
   const text =

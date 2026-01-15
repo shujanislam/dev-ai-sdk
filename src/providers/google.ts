@@ -1,12 +1,13 @@
 import type { Provider } from '../types/types';
+import { SDKError } from '../core/error';
 
-export async function googleProvider(provider: Provider): Promise<string> {
+export async function googleProvider(provider: Provider, apiKey: string): Promise<string> {
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${provider.model}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": provider.apiKey,
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
         contents: [
@@ -16,6 +17,10 @@ export async function googleProvider(provider: Provider): Promise<string> {
         ],
       }),
     });
+
+    if(!res.ok){
+    throw new SDKError(`Gemini error ${res.status}`, 'Google');
+    }
 
     const data = await res.json();
 
