@@ -1,7 +1,7 @@
-import type { Provider } from '../types/types';
+import type { Provider, Output } from '../types/types';
 import { SDKError } from '../core/error';
 
-export async function openaiProvider(provider: Provider, apiKey: string): Promise<string> {
+export async function openaiProvider(provider: Provider, apiKey: string): Promise<Output> {
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -26,8 +26,17 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     "";
 
   if(provider?.raw === true){
-    return data; 
+    return {
+      text,
+      provider: 'openai',
+      model: provider.model,
+      raw: data,
+    }; 
   }
 
-  return text;
+  return {
+    text,
+    provider: 'openai',
+    model: provider.model,
+  };
 }
