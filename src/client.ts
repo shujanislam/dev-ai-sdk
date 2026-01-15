@@ -2,7 +2,7 @@ import type { Provider, Output } from './types/types';
 import { googleProvider } from './providers/google';
 import { openaiProvider } from './providers/openai';
 import { SDKError } from './core/error';
-import { validateProvider } from './core/validate';
+import { validateConfig, validateProvider } from './core/validate';
 import type { SDKConfig } from './core/config';
 
 export class genChat{
@@ -10,7 +10,7 @@ export class genChat{
   private openaiApiKey: string;
   
   constructor(sdkConfig: SDKConfig) {
-    if(!sdkConfig) throw new SDKError('no providers configured', 'core');
+    validateConfig(sdkConfig);
 
     if(sdkConfig.google?.apiKey) this.googleApiKey = sdkConfig.google.apiKey;
   

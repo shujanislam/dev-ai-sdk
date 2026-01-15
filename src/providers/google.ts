@@ -18,11 +18,12 @@ export async function googleProvider(provider: Provider, apiKey: string): Promis
       }),
     });
 
-   if(!res.ok){
-     throw new SDKError(`Gemini error ${res.status}`, 'Google');
-   }
-
    const raw_data = await res.json();
+   
+  if(!res.ok){
+    const msg = raw_data?.error?.message ?? `Gemini error`; 
+    throw new SDKError(`Gemini error ${msg}`, 'Google');
+   }
 
     const data = raw_data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''; 
 
