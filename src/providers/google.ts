@@ -24,5 +24,9 @@ export async function googleProvider(provider: Provider, apiKey: string): Promis
 
     const data = await res.json();
 
+    if(provider?.raw === true){
+      return data; 
+    }
+
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "sorry";
 }

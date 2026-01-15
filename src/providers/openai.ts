@@ -25,5 +25,9 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     data.output?.[0]?.content?.map((c: any) => c.text).join("") ??
     "";
 
+  if(provider?.raw === true){
+    return data; 
+  }
+
   return text;
 }
