@@ -1,4 +1,4 @@
-import type { Provider } from './types/types';
+import type { Provider, Output } from './types/types';
 import { googleProvider } from './providers/google';
 import { openaiProvider } from './providers/openai';
 import { SDKError } from './core/error';
@@ -17,19 +17,15 @@ export class genChat{
     if(sdkConfig.openai?.apiKey) this.openaiApiKey = sdkConfig.openai.apiKey;
   }
 
-  async googleGenerate(provider: Provider): Promise<string> {
+  async generate(provider: Provider): Promise<Output> {
     validateProvider(provider);
 
-    const result = await googleProvider(provider, this.googleApiKey); 
+    let res: Output;
 
-    return result;
-  }
+    if(provider.google) res = await googleProvider(provider, this.googleApiKey);
 
-  async openaiGenerate(provider: Provider): Promise<string> {
-    validateProvider(provider);
-    
-    const result = await openaiProvider(provider, this.openaiApiKey); 
+    if(provider.openai) res = await openaiProvider(provider, this.openaiApiKey);
 
-    return result;
+    return res;
   }
 }
