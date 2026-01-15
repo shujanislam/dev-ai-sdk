@@ -3,7 +3,7 @@ export type SDKConfig = {
     apiKey: string;
   };
 
-  openai: {
+  openai?: {
     apiKey: string;
   };
 };
