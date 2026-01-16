@@ -49,9 +49,12 @@ export class genChat{
         // try other configured providers via fallback engine
         return await fallbackEngine(err.provider, this.sdkConfig, provider);
       }
-      else{
+      
+      if(err instanceof SDKError){
         throw err;
       }
+
+      throw new SDKError('Unexpected Error', 'core');
     }
   }
 

@@ -19,11 +19,12 @@ const ai = new genChat({
   mistral: {
     apiKey: process.env.MISTRAL_API_KEY,
   },
+  // fallback: true,
 });
 
 const res = await ai.generate({
-  openai: {
-    model: 'gpt-5.2',
+  mistral: {
+    model: 'mistral-tiny',
     prompt: 'explain vercel in one line',
     // system: 'Act like you are the maker of Vercel and answer accordingly',
     // maxTokens: 500,
