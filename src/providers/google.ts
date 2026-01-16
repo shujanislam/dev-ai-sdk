@@ -15,6 +15,10 @@ export async function googleProvider(provider: Provider, apiKey: string): Promis
             parts: [{ text: provider.google.prompt }],
           },
         ],
+        generationConfig: {
+          temperature: provider.google.temperature,
+          maxOutputTokens: provider.google.maxToken,
+        },
       }),
     });
 

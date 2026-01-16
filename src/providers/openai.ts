@@ -9,8 +9,10 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: provider.model,
-      input: provider.prompt,
+      model: provider.openai.model,
+      input: provider.openai.prompt,
+      temperature: provider.openai.temperature,
+      max_output_tokens: provider.openai.maxTokens,
     }),
   });
 
@@ -29,7 +31,7 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     return {
       text,
       provider: 'openai',
-      model: provider.model,
+      model: provider.openai.model,
       raw: data,
     }; 
   }
@@ -37,6 +39,6 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
   return {
     text,
     provider: 'openai',
-    model: provider.model,
+    model: provider.openai.model,
   };
 }
