@@ -14,5 +14,7 @@ export type SDKConfig = {
   mistral?: {
     apiKey: string;
   };
+
+  fallback?: boolean;
 };
 

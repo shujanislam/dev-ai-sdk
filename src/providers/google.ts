@@ -1,7 +1,7 @@
 import type { Provider, Output } from '../types/types';
 import { SDKError } from '../core/error';
 
-export async function googleProvider(provider: Provider, apiKey: string): Promise<Output> {
+export async function googleProvider(provider: Provider, apiKey: string, sdkConfig: SDKConfig): Promise<Output> {
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${provider.google.model}:generateContent`, {
       method: "POST",

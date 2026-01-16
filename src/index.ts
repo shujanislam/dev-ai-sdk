@@ -6,8 +6,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// TODO: IF A MODEL FAILS TO GIVE OUTPUT, FALL BACK TO NEXT MODEL
-
 const ai = new genChat({
   google: {
     apiKey: process.env.GOOGLE_API_KEY,
@@ -17,11 +15,12 @@ const ai = new genChat({
   },
   mistral: {
     apiKey: process.env.MISTRAL_API_KEY,
-  }
+  },
+  fallback: true,
 });
 
 const res = await ai.generate({
-  mistral: {
+  google: {
     model: 'mistral-tiny',
     prompt: 'explain vercel in one line',
     // system: 'Act like you are the maker of Vercel and answer accordingly',
