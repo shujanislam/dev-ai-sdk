@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// TODO: IF A MODEL FAILS TO GIVE OUTPUT, FALL BACK TO NEXT MODEL
+
 const ai = new genChat({
   google: {
     apiKey: process.env.GOOGLE_API_KEY,

@@ -2,18 +2,29 @@
 
 Universal AI SDK with a single syntax for multiple LLM providers.
 
-This is an early, minimal version that focuses on a simple "generate text" use case with basic provider routing and validation. It currently supports:
+This project aims to give you a small, provider-agnostic layer for text generation across different APIs using a consistent TypeScript interface.
 
-- OpenAI Responses API
+It is still in an early, experimental phase.
+
+Currently supported providers:
+
+- OpenAI (Responses API)
 - Google Gemini (Generative Language API)
+- DeepSeek (chat completions, OpenAI-like)
+- Mistral (chat completions, OpenAI-like)
 
 ---
 
-## Features
+## Features (Current)
 
-- Unified interface for multiple providers (OpenAI, Google)
+- Unified interface for multiple providers (OpenAI, Google, DeepSeek, Mistral)
+- Simple `genChat` client with a single `generate` method
 - Strongly typed configuration and request/response types
 - Centralized validation of configuration and provider calls
+- Basic support for:
+  - `system` prompt (per provider)
+  - `temperature` and `maxTokens` (per provider)
+  - Optional `raw` responses to inspect full provider JSON
 - Normalized error type (`SDKError`) with provider tagging
 - Tiny, dependency-light TypeScript codebase
 
@@ -56,7 +67,7 @@ This outputs compiled files to `dist/` as configured in `package.json`.
 The library exposes a single main client class today: `genChat`.
 
 - You configure the client with API keys for the providers you want to use.
-- You call `generate` with exactly one provider payload (`google` or `openai`).
+- You call `generate` with exactly one provider payload (`google`, `openai`, `deepseek`, or `mistral`).
 - The client validates the configuration and the request, then calls the appropriate provider adapter.
 
 Key files:
@@ -64,6 +75,8 @@ Key files:
 - `src/client.ts` – main `genChat` class
 - `src/providers/google.ts` – Google Gemini implementation
 - `src/providers/openai.ts` – OpenAI Responses API implementation
+- `src/providers/deepseek.ts` – DeepSeek chat completions implementation
+- `src/providers/mistral.ts` – Mistral chat completions implementation
 - `src/core/config.ts` – SDK configuration types
 - `src/core/validate.ts` – configuration and provider validation
 - `src/core/error.ts` – `SDKError` implementation
@@ -84,12 +97,20 @@ export type SDKConfig = {
   openai?: {
     apiKey: string;
   };
+
+  deepseek?: {
+    apiKey: string;
+  };
+
+  mistral?: {
+    apiKey: string;
+  };
 };
 ```
 
 Rules:
 
-- At least one provider (`google` or `openai`) must be configured.
+- At least one provider (`google`, `openai`, `deepseek`, or `mistral`) must be configured.
 - Each configured provider must have a non-empty `apiKey` string.
 - If these rules are violated, the SDK throws an `SDKError` from `validateConfig`.
 
@@ -105,8 +126,16 @@ const ai = new genChat({
   openai: {
     apiKey: process.env.OPENAI_API_KEY!,
   },
+  deepseek: {
+    apiKey: process.env.DEEPSEEK_API_KEY!,
+  },
+  mistral: {
+    apiKey: process.env.MISTRAL_API_KEY!,
+  },
 });
 ```
+
+You can also configure only the providers you actually intend to use.
 
 ---
 
@@ -119,21 +148,54 @@ export type Provider = {
   google?: {
     model: string;
     prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
     raw?: boolean;
   };
 
   openai?: {
     model: string;
     prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
     raw?: boolean;
   };
-};
+
+  deepseek?: {
+    model: string;
+    prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
+    raw?: boolean;
+  };
+
+  mistral?: {
+    model: string;
+    prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
+    raw?: boolean;
+  };
+}
 ```
+
+Common fields per provider:
+
+- `model` (**required**) – model name for that provider.
+- `prompt` (**required**) – the main user message.
+- `system` (optional) – high-level system instruction (currently only passed through if you add support in the provider).
+- `temperature` (optional) – sampling temperature (0–2, provider-specific behavior).
+- `maxTokens` (optional) – maximum output tokens (provider-specific naming under the hood).
+- `raw` (optional) – if `true`, include the full raw provider response in `Output.raw`.
 
 Rules enforced by `validateProvider`:
 
 - Exactly one provider must be present per call:
-  - Either `provider.google` or `provider.openai`, but not both.
+  - Either `provider.google`, `provider.openai`, `provider.deepseek`, or `provider.mistral`, but not more than one at a time.
 - For the selected provider:
   - `model` must be a non-empty string.
   - `prompt` must be a non-empty string.
@@ -152,17 +214,17 @@ export type Output = {
   provider: string;
   model: string;
   raw?: any;
-};
+}
 ```
 
 Fields:
 
-- `data`: the main text content returned by the model (for Google, this is the text from the top candidate; for OpenAI, it is derived from the response content).
-- `provider`: the provider identifier (for example, `'google'` or `'openai'`).
+- `data`: the main text content returned by the model (extracted from each provider-specific response format).
+- `provider`: the provider identifier (for example, `'google'`, `'openai'`, `'deepseek'`, `'mistral'`).
 - `model`: the model name that was used.
 - `raw` (optional): the full raw JSON response from the provider, included only when `raw: true` is set on the request.
 
-> Note: As of now, the underlying provider implementations may use slightly different field names internally (`text` vs `data`), but the public `Output` type documents the intended normalized shape.
+> Note: Internally, some providers may temporarily return `{ text: ... }` instead of `{ data: ... }`, but the long-term intention is to normalize around `data` as the main text field.
 
 ---
 
@@ -182,15 +244,21 @@ const ai = new genChat({
   openai: {
     apiKey: process.env.OPENAI_API_KEY!,
   },
+  deepseek: {
+    apiKey: process.env.DEEPSEEK_API_KEY!,
+  },
+  mistral: {
+    apiKey: process.env.MISTRAL_API_KEY!,
+  },
 });
 ```
 
-You can also configure only one provider if you prefer:
+You can also configure just one provider, e.g. only Mistral:
 
 ```ts
 const ai = new genChat({
-  google: {
-    apiKey: process.env.GOOGLE_API_KEY!,
+  mistral: {
+    apiKey: process.env.MISTRAL_API_KEY!,
   },
 });
 ```
@@ -202,6 +270,8 @@ const result = await ai.generate({
   google: {
     model: 'gemini-2.5-flash-lite',
     prompt: 'Summarize the benefits of TypeScript in 3 bullet points.',
+    temperature: 0.4,
+    maxTokens: 256,
     raw: false, // set to true to include full raw response
   },
 });
@@ -211,21 +281,15 @@ console.log(result.model);    // 'gemini-2.5-flash-lite'
 console.log(result.data);     // summarized text
 ```
 
-Under the hood (`src/providers/google.ts`):
-
-- The SDK calls the Gemini `generateContent` endpoint:
-  - `POST https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
-- It sends the prompt as `contents[0].parts[0].text`.
-- It extracts the top candidate text at `candidates[0].content.parts[0].text`.
-- If `raw: true` is set in the request, the full JSON response is returned in `raw`.
-
-### 3. Calling OpenAI Responses API
+### 3. Calling OpenAI (Responses API)
 
 ```ts
 const result = await ai.generate({
   openai: {
     model: 'gpt-4.1-mini',
     prompt: 'Generate a creative product name for a note-taking app.',
+    temperature: 0.7,
+    maxTokens: 128,
     raw: false, // set to true to include full raw response
   },
 });
@@ -235,17 +299,45 @@ console.log(result.model);    // 'gpt-4.1-mini'
 console.log(result.data);     // generated product name
 ```
 
-Under the hood (`src/providers/openai.ts`):
+### 4. Calling DeepSeek
 
-- The SDK calls the OpenAI Responses API:
-  - `POST https://api.openai.com/v1/responses`
-- It sends:
-  - `model`: the value you provided.
-  - `input`: the `prompt` you provided.
-- It attempts to extract a text string from common response formats:
-  - `data.output_text`, or
-  - `data.output[0].content[].text` joined into one string.
-- If `raw: true` is set in the request, the full JSON response is included in `raw`.
+```ts
+const result = await ai.generate({
+  deepseek: {
+    model: 'deepseek-chat',
+    prompt: 'Explain RAG in simple terms.',
+    temperature: 0.5,
+    maxTokens: 256,
+    raw: true, // include full raw DeepSeek response
+  },
+});
+
+console.log(result.provider); // 'deepseek'
+console.log(result.model);    // 'deepseek-chat'
+console.log(result.data);     // explanation text
+console.log(result.raw);      // full DeepSeek JSON (for debugging)
+```
+
+### 5. Calling Mistral
+
+```ts
+const result = await ai.generate({
+  mistral: {
+    model: 'mistral-tiny',
+    prompt: 'Give me a short haiku about TypeScript.',
+    temperature: 0.8,
+    maxTokens: 64,
+    raw: true,
+  },
+});
+
+console.log(result.provider); // 'mistral'
+console.log(result.model);    // 'mistral-tiny'
+console.log(result.data);     // haiku text (once the provider normalizes to `data`)
+console.log(result.raw);      // full Mistral JSON (for inspecting choices/message)
+```
+
+> Note: The provider implementations for DeepSeek and Mistral are still evolving. They are currently focused on basic, URL-based chat completions and raw response inspection while you iterate on the exact output normalization.
 
 ---
 
@@ -269,11 +361,11 @@ export class SDKError extends Error {
 Examples of when `SDKError` is thrown:
 
 - No providers configured in `SDKConfig`.
-- API key is missing or an empty string.
+- API key is missing or an empty string for a configured provider.
 - No provider passed to `generate`.
-- Both `google` and `openai` passed in a single `generate` call.
+- More than one provider passed in a single `generate` call.
 - `model` or `prompt` is missing/empty for the chosen provider.
-- Provider HTTP response is not OK (`res.ok === false`), in which case the error message includes the status code and response data (for OpenAI) or the error message from Gemini.
+- Provider HTTP response is not OK (`res.ok === false`), in which case the error message includes the status code and response data.
 
 You can catch and inspect `SDKError` like this:
 
@@ -323,15 +415,15 @@ The `src/` directory is included for compilation.
 
 ---
 
-## Limitations
+## Limitations (Current)
 
-This project is currently in a very early stage and has several limitations:
+This project is currently in an early stage and has several limitations:
 
-- Only single-prompt text generation is supported (no chat/history abstraction yet).
+- Only single-prompt text generation is supported (no explicit chat/history abstraction yet).
 - No streaming APIs are exposed.
 - No structured/JSON output helpers are provided.
 - No React/Next.js integrations or hooks are included.
-- Only OpenAI and Google Gemini are supported.
+- Output normalization across providers (e.g. always using `data`) is still being finalized.
 
 These limitations are intentional for now to keep the core small and focused while the API surface is still evolving.
 
