@@ -6,4 +6,8 @@ export type SDKConfig = {
   openai?: {
     apiKey: string;
   };
+
+  deepseek?: {
+    apiKey: string;
+  };
 };

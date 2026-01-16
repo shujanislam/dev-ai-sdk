@@ -5,9 +5,12 @@ import { SDKError } from './error';
 export function validateProvider(provider: Provider) {
   const hasGoogle = !!provider.google;
   const hasOpenAI = !!provider.openai;
+  const hasDeepSeek = !!provider.deepseek;
 
-  if (!hasGoogle && !hasOpenAI) throw new SDKError("No provider passed", "core");
-  if (hasGoogle && hasOpenAI) throw new SDKError("Pass only one provider", "core");
+  const totalProviders = Number(hasGoogle) + Number(hasOpenAI) + Number(hasDeepSeek);
+
+  if (totalProviders === 0) throw new SDKError("No provider passed", "core");
+  if (totalProviders > 1) throw new SDKError("Pass only one provider", "core");
 
   if (hasGoogle) {
     if (!provider.google!.model.trim()) throw new SDKError("google.model is required", "google");
@@ -18,6 +21,11 @@ export function validateProvider(provider: Provider) {
     if (!provider.openai!.model.trim()) throw new SDKError("openai.model is required", "openai");
     if (!provider.openai!.prompt.trim()) throw new SDKError("openai.prompt is required", "openai");
   }
+
+  if (hasDeepSeek) {
+    if (!provider.deepseek!.model.trim()) throw new SDKError("deepseek.model is required", "deepseek");
+    if (!provider.deepseek!.prompt.trim()) throw new SDKError("deepseek.prompt is required", "deepseek");
+  }
 }
 
 export function validateConfig(sdkConfig: SDKConfig) {
@@ -27,8 +35,9 @@ export function validateConfig(sdkConfig: SDKConfig) {
 
   const hasGoogle = !!sdkConfig.google;
   const hasOpenAI = !!sdkConfig.openai;
+  const hasDeepSeek = !!sdkConfig.deepseek;
 
-  if (!hasGoogle && !hasOpenAI) {
+  if (!hasGoogle && !hasOpenAI && !hasDeepSeek) {
     throw new SDKError('no providers configured', 'core');
   }
 
@@ -43,6 +52,13 @@ export function validateConfig(sdkConfig: SDKConfig) {
     const key = sdkConfig.openai?.apiKey;
     if (typeof key !== 'string' || key.trim().length === 0) {
       throw new SDKError('openai.apiKey is required', 'openai');
+    }
+  }
+
+  if (hasDeepSeek) {
+    const key = sdkConfig.deepseek?.apiKey;
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      throw new SDKError('deepseek.apiKey is required', 'deepseek');
     }
   }
 }
