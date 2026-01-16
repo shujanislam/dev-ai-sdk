@@ -4,7 +4,7 @@ import { SDKError } from './core/error';
 
 const ai = new genChat({
   google: {
-    apiKey: 'AIzaSyAw29Z0r1wMYXJzxGVb-J64h_fsESxOX5g',
+    apiKey: 'API_KEY',
   }
 });
 
