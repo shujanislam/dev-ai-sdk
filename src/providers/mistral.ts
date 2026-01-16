@@ -25,21 +25,16 @@ export async function mistralProvider(provider: Provider, apiKey: string): Promi
     throw new SDKError(`Mistral error ${res.status}: ${JSON.stringify(data)}`, 'Mistral');
   }
 
-  // const text =
-  //   data.output_text ??
-  //   data.output?.[0]?.content?.map((c: any) => c.text).join("") ??
-  //   "";
-  //
-  // if(provider?.raw === true){
-  //   return {
-  //     text,
-  //     provider: 'deepseek',
-  //     model: provider.deepseek.model,
-  //     raw: data,
-  //   }; 
-  // }
+  const text = data.choices?.[0]?.message?.content ?? '';
 
-  const text = data.choices?.[0]?.message?.content;
+  if(provider?.raw === true){
+    return {
+      text,
+      provider: 'mistral',
+      model: provider.mistral.model,
+      raw: data,
+    }; 
+  }
 
   return {
     text,
