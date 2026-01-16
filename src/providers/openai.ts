@@ -10,7 +10,7 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     },
     body: JSON.stringify({
       model: provider.openai.model,
-      input: provider.openai.prompt,
+      input: `${provider.openai.system ?? '' } ${provider.openai.prompt}`,
       temperature: provider.openai.temperature,
       max_output_tokens: provider.openai.maxTokens,
     }),

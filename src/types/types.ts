@@ -2,6 +2,7 @@ export type Provider = {
   google? : {
     model: string;
     prompt: string;
+    system?: text;
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
@@ -10,6 +11,7 @@ export type Provider = {
   openai? : {
     model: string;
     prompt: string;
+    system?: string;
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;

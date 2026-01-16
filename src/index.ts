@@ -11,7 +11,8 @@ const ai = new genChat({
 const res = await ai.generate({
   google: {
     model: 'gemini-2.5-flash-lite',
-    prompt: 'when is jcoles the fall off album release?',
+    prompt: 'explain typescript in one line',
+    system: 'Act like you are the maker of Typescript and answer accordingly',
     maxTokens: 500,
   },
 });

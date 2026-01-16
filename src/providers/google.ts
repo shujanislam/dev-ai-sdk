@@ -12,7 +12,7 @@ export async function googleProvider(provider: Provider, apiKey: string): Promis
       body: JSON.stringify({
         contents: [
           {
-            parts: [{ text: provider.google.prompt }],
+            parts: [{ text: `${provider.google.system ?? ''} ${provider.google.prompt}` }],
           },
         ],
         generationConfig: {
