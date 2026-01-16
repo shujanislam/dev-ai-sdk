@@ -9,49 +9,52 @@ import type { SDKConfig } from './core/config';
 import { fallbackEngine } from './core/fallbackEngine';
 
 export class genChat{
-  private googleApiKey: string;
-  private openaiApiKey: string;
-  private deepseekApiKey: string;
-  private mistralApiKey: string;
-  private fallback: boolean;
+  private sdkConfig: SDKConfig;
   
   constructor(sdkConfig: SDKConfig) {
     validateConfig(sdkConfig);
- 
-    if (sdkConfig.google?.apiKey) this.googleApiKey = sdkConfig.google.apiKey;
-  
-    if (sdkConfig.openai?.apiKey) this.openaiApiKey = sdkConfig.openai.apiKey;
- 
-    if (sdkConfig.deepseek?.apiKey) this.deepseekApiKey = sdkConfig.deepseek.apiKey;
- 
-    if (sdkConfig.mistral?.apiKey) this.mistralApiKey = sdkConfig.mistral.apiKey;
- 
-    this.fallback = sdkConfig.fallback === true;
+
+    this.sdkConfig = {
+      google: sdkConfig.google ? { ...sdkConfig.google } : undefined,
+      openai: sdkConfig.openai ? { ...sdkConfig.openai } : undefined,
+      deepseek: sdkConfig.deepseek ? { ...sdkConfig.deepseek } : undefined,
+      mistral: sdkConfig.mistral ? { ...sdkConfig.mistral } : undefined,
+      fallback: sdkConfig.fallback,
+    };
   }
  
   async generate(provider: Provider): Promise<Output> {
-
     validateProvider(provider);
     
-    try{
-      let res: Output;
+    try {
+      if (provider.google) {
+        return await googleProvider(provider, this.sdkConfig.google!.apiKey);
+      }
  
-      if(provider.google) res = await googleProvider(provider, this.googleApiKey);
+      if (provider.openai) {
+        return await openaiProvider(provider, this.sdkConfig.openai!.apiKey);
+      }
  
-      if(provider.openai) res = await openaiProvider(provider, this.openaiApiKey);
+      if (provider.deepseek) {
+        return await deepseekProvider(provider, this.sdkConfig.deepseek!.apiKey);
+      }
  
-      if(provider.deepseek) res = await deepseekProvider(provider, this.deepseekApiKey);
-
-      if(provider.mistral) res = await mistralProvider(provider, this.mistralApiKey);
-    
-      return res;
-    } catch (err) {
-      if (this.fallback === true) {
-        fallbackEngine();
+      if (provider.mistral) {
+        return await mistralProvider(provider, this.sdkConfig.mistral!.apiKey);
       }
 
-      throw new SDKError('Error');
+      throw new SDKError('No provider passed', 'core');
+    } catch (err) {
+      if (err instanceof SDKError && this.sdkConfig.fallback === true) {
+        // try other configured providers via fallback engine
+        return await fallbackEngine(err.provider, this.sdkConfig, provider);
+      }
+      else{
+        throw err;
+      }
     }
   }
+
+
 }
 

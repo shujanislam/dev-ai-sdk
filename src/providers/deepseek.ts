@@ -22,7 +22,7 @@ export async function deepseekProvider(provider: Provider, apiKey: string): Prom
   const data = await res.json();
 
   if (!res.ok) {
-    throw new SDKError(`Deepseek error ${res.status}: ${JSON.stringify(data)}`, 'Deepseek');
+    throw new SDKError(`Deepseek error ${res.status}: ${JSON.stringify(data)}`, 'deepseek');
   }
 
   const text =

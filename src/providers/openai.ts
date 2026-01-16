@@ -19,7 +19,7 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
   const data = await res.json();
 
   if (!res.ok) {
-    throw new SDKError(`OpenAI error ${res.status}: ${JSON.stringify(data)}`, 'OpenAI');
+    throw new SDKError(`OpenAI error ${res.status}: ${JSON.stringify(data)}`, 'openai');
   }
 
   const text =

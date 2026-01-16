@@ -1,7 +1,7 @@
 import type { Provider, Output } from '../types/types';
 import { SDKError } from '../core/error';
 
-export async function googleProvider(provider: Provider, apiKey: string, sdkConfig: SDKConfig): Promise<Output> {
+export async function googleProvider(provider: Provider, apiKey: string): Promise<Output> {
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${provider.google.model}:generateContent`, {
       method: "POST",
@@ -26,7 +26,7 @@ export async function googleProvider(provider: Provider, apiKey: string, sdkConf
    
   if(!res.ok){
     const msg = raw_data?.error?.message ?? `Gemini error`; 
-    throw new SDKError(`Gemini error ${msg}`, 'Google');
+    throw new SDKError(`Gemini error ${msg}`, 'google');
    }
 
     const data = raw_data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''; 

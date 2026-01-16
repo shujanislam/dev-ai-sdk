@@ -10,18 +10,20 @@ const ai = new genChat({
   google: {
     apiKey: process.env.GOOGLE_API_KEY,
   },
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY,
+  },
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY,
   },
   mistral: {
     apiKey: process.env.MISTRAL_API_KEY,
   },
-  fallback: true,
 });
 
 const res = await ai.generate({
-  google: {
-    model: 'mistral-tiny',
+  openai: {
+    model: 'gpt-5.2',
     prompt: 'explain vercel in one line',
     // system: 'Act like you are the maker of Vercel and answer accordingly',
     // maxTokens: 500,

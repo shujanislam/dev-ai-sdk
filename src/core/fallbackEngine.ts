@@ -4,10 +4,97 @@ import { openaiProvider } from '../providers/openai';
 import { deepseekProvider } from '../providers/deepseek';
 import { mistralProvider } from '../providers/mistral';
 import { SDKError } from './error';
-import { validateConfig, validateProvider } from './validate';
 import type { SDKConfig } from './config';
+ 
+export async function fallbackEngine(
+  failedProvider: string,
+  sdkConfig: SDKConfig,
+  originalProvider: Provider,
+): Promise<Output> {
+  const candidates: Array<'google' | 'openai' | 'deepseek' | 'mistral'> = [];
 
-export function fallbackEngine(): string{
-  console.log('fallback working');
-  return '';
+  if (sdkConfig.google?.apiKey && failedProvider !== 'google') candidates.push('google');
+  if (sdkConfig.openai?.apiKey && failedProvider !== 'openai') candidates.push('openai');
+  if (sdkConfig.deepseek?.apiKey && failedProvider !== 'deepseek') candidates.push('deepseek');
+  if (sdkConfig.mistral?.apiKey && failedProvider !== 'mistral') candidates.push('mistral');
+
+  if (candidates.length === 0) {
+    throw new SDKError('No fallback providers configured', 'core');
+  }
+
+  const sourceConfig =
+    originalProvider.google ??
+    originalProvider.openai ??
+    originalProvider.deepseek ??
+    originalProvider.mistral;
+
+  if (!sourceConfig) {
+    throw new SDKError('No original provider config found for fallback', 'core');
+  }
+
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    try {
+      const nextProvider: Provider = {};
+
+      if (candidate === 'google') {
+        nextProvider.google = {
+          model: 'gemini-2.5-flash-lite',
+          prompt: sourceConfig.prompt,
+          system: sourceConfig.system,
+          temperature: sourceConfig.temperature,
+          maxTokens: sourceConfig.maxTokens,
+          raw: sourceConfig.raw,
+        };
+        return await googleProvider(nextProvider, sdkConfig.google!.apiKey);
+      }
+
+      if (candidate === 'openai') {
+        nextProvider.openai = {
+          model: 'gpt-5.2',
+          prompt: sourceConfig.prompt,
+          system: sourceConfig.system,
+          temperature: sourceConfig.temperature,
+          maxTokens: sourceConfig.maxTokens,
+          raw: sourceConfig.raw,
+        };
+        return await openaiProvider(nextProvider, sdkConfig.openai!.apiKey);
+      }
+
+      if (candidate === 'deepseek') {
+        nextProvider.deepseek = {
+          model: 'deepseek-chat',
+          prompt: sourceConfig.prompt,
+          system: sourceConfig.system,
+          temperature: sourceConfig.temperature,
+          maxTokens: sourceConfig.maxTokens,
+          raw: sourceConfig.raw,
+        };
+        return await deepseekProvider(nextProvider, sdkConfig.deepseek!.apiKey);
+      }
+
+      if (candidate === 'mistral') {
+        nextProvider.mistral = {
+          model: 'mistral-tiny',
+          prompt: sourceConfig.prompt,
+          system: sourceConfig.system,
+          temperature: sourceConfig.temperature,
+          maxTokens: sourceConfig.maxTokens,
+          raw: sourceConfig.raw,
+        };
+        return await mistralProvider(nextProvider, sdkConfig.mistral!.apiKey);
+      }
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
+  }
+
+  if (lastError instanceof SDKError) {
+    throw lastError;
+  }
+
+  throw new SDKError('All fallback providers failed', 'core');
 }
+

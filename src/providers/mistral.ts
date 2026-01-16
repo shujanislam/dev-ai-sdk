@@ -22,7 +22,7 @@ export async function mistralProvider(provider: Provider, apiKey: string): Promi
   const data = await res.json();
 
   if (!res.ok) {
-    throw new SDKError(`Mistral error ${res.status}: ${JSON.stringify(data)}`, 'Mistral');
+    throw new SDKError(`Mistral error ${res.status}: ${JSON.stringify(data)}`, 'mistral');
   }
 
   const text = data.choices?.[0]?.message?.content ?? '';
