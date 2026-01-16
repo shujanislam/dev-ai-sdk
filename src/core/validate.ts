@@ -6,8 +6,9 @@ export function validateProvider(provider: Provider) {
   const hasGoogle = !!provider.google;
   const hasOpenAI = !!provider.openai;
   const hasDeepSeek = !!provider.deepseek;
+  const hasMistral = !!provider.mistral;
 
-  const totalProviders = Number(hasGoogle) + Number(hasOpenAI) + Number(hasDeepSeek);
+  const totalProviders = Number(hasGoogle) + Number(hasOpenAI) + Number(hasDeepSeek) + Number(hasMistral);
 
   if (totalProviders === 0) throw new SDKError("No provider passed", "core");
   if (totalProviders > 1) throw new SDKError("Pass only one provider", "core");
@@ -26,6 +27,11 @@ export function validateProvider(provider: Provider) {
     if (!provider.deepseek!.model.trim()) throw new SDKError("deepseek.model is required", "deepseek");
     if (!provider.deepseek!.prompt.trim()) throw new SDKError("deepseek.prompt is required", "deepseek");
   }
+
+  if (hasMistral) {
+    if (!provider.mistral!.model.trim()) throw new SDKError("mistral.model is required", "mistral");
+    if (!provider.mistral!.prompt.trim()) throw new SDKError("mistral.prompt is required", "mistral");
+  }
 }
 
 export function validateConfig(sdkConfig: SDKConfig) {
@@ -36,8 +42,9 @@ export function validateConfig(sdkConfig: SDKConfig) {
   const hasGoogle = !!sdkConfig.google;
   const hasOpenAI = !!sdkConfig.openai;
   const hasDeepSeek = !!sdkConfig.deepseek;
+  const hasMistral = !!sdkConfig.mistral;
 
-  if (!hasGoogle && !hasOpenAI && !hasDeepSeek) {
+  if (!hasGoogle && !hasOpenAI && !hasDeepSeek && !hasMistral) {
     throw new SDKError('no providers configured', 'core');
   }
 
@@ -59,6 +66,13 @@ export function validateConfig(sdkConfig: SDKConfig) {
     const key = sdkConfig.deepseek?.apiKey;
     if (typeof key !== 'string' || key.trim().length === 0) {
       throw new SDKError('deepseek.apiKey is required', 'deepseek');
+    }
+  }
+
+  if (hasMistral) {
+    const key = sdkConfig.mistral?.apiKey;
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      throw new SDKError('mistral.apiKey is required', 'mistral');
     }
   }
 }

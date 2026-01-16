@@ -1,5 +1,5 @@
 export type SDKConfig = {
-  google? : {
+  google?: {
     apiKey: string;
   };
 
@@ -10,4 +10,9 @@ export type SDKConfig = {
   deepseek?: {
     apiKey: string;
   };
+
+  mistral?: {
+    apiKey: string;
+  };
 };
+

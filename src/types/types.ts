@@ -1,14 +1,5 @@
 export type Provider = {
-  google? : {
-    model: string;
-    prompt: string;
-    system?: text;
-    temperature?: number;
-    maxTokens?: number;
-    raw?: boolean;
-  };
-
-  openai? : {
+  google?: {
     model: string;
     prompt: string;
     system?: string;
@@ -16,8 +7,26 @@ export type Provider = {
     maxTokens?: number;
     raw?: boolean;
   };
-  
-  deepseek? : {
+
+  openai?: {
+    model: string;
+    prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
+    raw?: boolean;
+  };
+
+  deepseek?: {
+    model: string;
+    prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
+    raw?: boolean;
+  };
+
+  mistral?: {
     model: string;
     prompt: string;
     system?: string;
@@ -26,6 +35,7 @@ export type Provider = {
     raw?: boolean;
   };
 }
+
 
 export type Output = {
   data: string;

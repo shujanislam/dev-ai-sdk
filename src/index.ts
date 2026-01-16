@@ -12,15 +12,18 @@ const ai = new genChat({
   },
   deepseek: {
     apiKey: process.env.DEEPSEEK_API_KEY,
+  },
+  mistral: {
+    apiKey: process.env.MISTRAL_API_KEY,
   }
 });
 
 const res = await ai.generate({
-  google: {
-    model: 'gemini-2.5-flash-lite',
+  mistral: {
+    model: 'mistral-tiny',
     prompt: 'explain vercel in one line',
-    system: 'Act like you are the maker of Vercel and answer accordingly',
-    maxTokens: 500,
+    // system: 'Act like you are the maker of Vercel and answer accordingly',
+    // maxTokens: 500,
   },
 });
 
