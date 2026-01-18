@@ -6,6 +6,7 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean;
   };
 
   openai?: {

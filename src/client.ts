@@ -1,5 +1,6 @@
 import type { Provider, Output } from './types/types';
-import { googleProvider } from './providers/google';
+import { googleCoreProvider } from './providers/google-core';
+import { googleStreamProvider } from './providers/google-stream';
 import { openaiProvider } from './providers/openai';
 import { deepseekProvider } from './providers/deepseek';
 import { mistralProvider } from './providers/mistral';
@@ -7,13 +8,13 @@ import { SDKError } from './core/error';
 import { validateConfig, validateProvider } from './core/validate';
 import type { SDKConfig } from './core/config';
 import { fallbackEngine } from './core/fallbackEngine';
-
+ 
 export class genChat{
   private sdkConfig: SDKConfig;
   
   constructor(sdkConfig: SDKConfig) {
     validateConfig(sdkConfig);
-
+ 
     this.sdkConfig = {
       google: sdkConfig.google ? { ...sdkConfig.google } : undefined,
       openai: sdkConfig.openai ? { ...sdkConfig.openai } : undefined,
@@ -23,12 +24,15 @@ export class genChat{
     };
   }
  
-  async generate(provider: Provider): Promise<Output> {
+  async generate(provider: Provider): Promise<Output | AsyncIterable<string>> {
     validateProvider(provider);
     
     try {
       if (provider.google) {
-        return await googleProvider(provider, this.sdkConfig.google!.apiKey);
+        if (provider.google.stream === true) {
+          return googleStreamProvider(provider, this.sdkConfig.google!.apiKey);
+        }
+        return await googleCoreProvider(provider, this.sdkConfig.google!.apiKey);
       }
  
       if (provider.openai) {
@@ -42,7 +46,7 @@ export class genChat{
       if (provider.mistral) {
         return await mistralProvider(provider, this.sdkConfig.mistral!.apiKey);
       }
-
+ 
       throw new SDKError('No provider passed', 'core');
     } catch (err) {
       if (err instanceof SDKError && this.sdkConfig.fallback === true) {
@@ -53,11 +57,9 @@ export class genChat{
       if(err instanceof SDKError){
         throw err;
       }
-
+ 
       throw new SDKError('Unexpected Error', 'core');
     }
   }
-
-
 }
 
