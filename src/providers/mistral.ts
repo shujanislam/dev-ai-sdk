@@ -2,6 +2,10 @@ import type { Provider, Output } from '../types/types';
 import { SDKError } from '../core/error';
 
 export async function mistralProvider(provider: Provider, apiKey: string): Promise<Output> {
+  if (!provider.mistral) {
+    throw new SDKError('mistral provider config missing', 'mistral');
+  }
+
   const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -29,7 +33,7 @@ export async function mistralProvider(provider: Provider, apiKey: string): Promi
 
   const text = data.choices?.[0]?.message?.content ?? '';
 
-  if (provider?.raw === true) {
+  if (provider.mistral.raw === true) {
     return {
       data: text,
       provider: 'mistral',

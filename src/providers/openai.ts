@@ -2,6 +2,10 @@ import type { Provider, Output } from '../types/types';
 import { SDKError } from '../core/error';
 
 export async function openaiProvider(provider: Provider, apiKey: string): Promise<Output> {
+  if (!provider.openai) {
+    throw new SDKError('openai provider config missing', 'openai');
+  }
+
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -10,7 +14,7 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     },
     body: JSON.stringify({
       model: provider.openai.model,
-      input: `${provider.openai.system ?? '' } ${provider.openai.prompt}`,
+      input: `${provider.openai.system ?? ''} ${provider.openai.prompt}`,
       temperature: provider.openai.temperature,
       max_output_tokens: provider.openai.maxTokens,
     }),
@@ -27,7 +31,7 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     data.output?.[0]?.content?.map((c: any) => c.text).join("") ??
     "";
 
-  if (provider?.raw === true) {
+  if (provider.openai.raw === true) {
     return {
       data: text,
       provider: 'openai',

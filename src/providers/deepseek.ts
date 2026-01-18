@@ -2,6 +2,10 @@ import type { Provider, Output } from '../types/types';
 import { SDKError } from '../core/error';
 
 export async function deepseekProvider(provider: Provider, apiKey: string): Promise<Output> {
+  if (!provider.deepseek) {
+    throw new SDKError('deepseek provider config missing', 'deepseek');
+  }
+
   const res = await fetch("https://api.deepseek.com/chat/completions", {
     method: "POST",
     headers: {
@@ -32,7 +36,7 @@ export async function deepseekProvider(provider: Provider, apiKey: string): Prom
     data.output?.[0]?.content?.map((c: any) => c.text).join("") ??
     "";
 
-  if (provider?.raw === true) {
+  if (provider.deepseek.raw === true) {
     return {
       data: text,
       provider: 'deepseek',
