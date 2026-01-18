@@ -22,7 +22,7 @@ const ai = new genChat({
  
 // Streaming example
 const res = await ai.generate({
-  mistral: {
+  google: {
     model: 'gemini-2.5-flash-lite',
     prompt: 'explain vercel in 5 lines',
     system: 'Act like you are the maker of Vercel and answer accordingly',
@@ -35,7 +35,7 @@ if (!(Symbol.asyncIterator in Object(res))) {
   throw new Error('Expected streaming result to be async iterable');
 }
 
-for await (const chunk of res as AsyncIterable<string>) {
+for await (const chunk of res as AsyncIterable<any>) {
   console.log(chunk);
 }
 
