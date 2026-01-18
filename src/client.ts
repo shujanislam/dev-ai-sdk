@@ -2,8 +2,11 @@ import type { Provider, Output } from './types/types';
 import { googleCoreProvider } from './providers/google-core';
 import { googleStreamProvider } from './providers/google-stream';
 import { openaiProvider } from './providers/openai';
+import { openaiStreamProvider } from './providers/openai-stream';
 import { deepseekProvider } from './providers/deepseek';
+import { deepseekStreamProvider } from './providers/deepseek-stream';
 import { mistralProvider } from './providers/mistral';
+import { mistralStreamProvider } from './providers/mistral-stream';
 import { SDKError } from './core/error';
 import { validateConfig, validateProvider } from './core/validate';
 import type { SDKConfig } from './core/config';
@@ -36,14 +39,23 @@ export class genChat{
       }
  
       if (provider.openai) {
+        if (provider.openai.stream === true) {
+          return openaiStreamProvider(provider, this.sdkConfig.openai!.apiKey);
+        }
         return await openaiProvider(provider, this.sdkConfig.openai!.apiKey);
       }
  
       if (provider.deepseek) {
+        if (provider.deepseek.stream === true) {
+          return deepseekStreamProvider(provider, this.sdkConfig.deepseek!.apiKey);
+        }
         return await deepseekProvider(provider, this.sdkConfig.deepseek!.apiKey);
       }
  
       if (provider.mistral) {
+        if (provider.mistral.stream === true) {
+          return mistralStreamProvider(provider, this.sdkConfig.mistral!.apiKey);
+        }
         return await mistralProvider(provider, this.sdkConfig.mistral!.apiKey);
       }
  

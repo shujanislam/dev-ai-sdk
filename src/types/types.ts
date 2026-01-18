@@ -16,8 +16,9 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean;
   };
-
+ 
   deepseek?: {
     model: string;
     prompt: string;
@@ -25,8 +26,9 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean;
   };
-
+ 
   mistral?: {
     model: string;
     prompt: string;
@@ -34,7 +36,9 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean;
   };
+
 }
 
 

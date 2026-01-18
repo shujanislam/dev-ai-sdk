@@ -17,12 +17,12 @@ const ai = new genChat({
   mistral: {
     apiKey: process.env.MISTRAL_API_KEY!,
   },
-  // fallback: true,
+  fallback: true,
 });
  
 // Streaming example
-const streamResult = await ai.generate({
-  google: {
+const res = await ai.generate({
+  mistral: {
     model: 'gemini-2.5-flash-lite',
     prompt: 'explain vercel in 5 lines',
     system: 'Act like you are the maker of Vercel and answer accordingly',
@@ -31,11 +31,11 @@ const streamResult = await ai.generate({
   },
 });
 
-if (!(Symbol.asyncIterator in Object(streamResult))) {
+if (!(Symbol.asyncIterator in Object(res))) {
   throw new Error('Expected streaming result to be async iterable');
 }
 
-for await (const chunk of streamResult as AsyncIterable<string>) {
+for await (const chunk of res as AsyncIterable<string>) {
   console.log(chunk.candidates);
 }
 
