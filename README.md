@@ -30,7 +30,6 @@ Currently supported providers:
 
 Planned (not implemented yet):
 
-- Streaming responses
 - Rich message/chat abstractions
 - JSON / structured output helpers
 - React / Next.js integrations
@@ -152,8 +151,9 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean; // stream text from Gemini
   };
-
+ 
   openai?: {
     model: string;
     prompt: string;
@@ -161,8 +161,9 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean; // stream text from OpenAI
   };
-
+ 
   deepseek?: {
     model: string;
     prompt: string;
@@ -170,8 +171,9 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean; // stream text from DeepSeek
   };
-
+ 
   mistral?: {
     model: string;
     prompt: string;
@@ -179,8 +181,10 @@ export type Provider = {
     temperature?: number;
     maxTokens?: number;
     raw?: boolean;
+    stream?: boolean; // stream text from Mistral
   };
 }
+
 ```
 
 Common fields per provider:
@@ -230,6 +234,16 @@ Fields:
 
 ## Usage
 
+### 0. Streaming vs non-streaming
+
+`genChat.generate` returns either a single `Output` (non-streaming) or an async iterable of chunks (streaming), depending on the per-provider `stream` flag:
+
+- If `stream` is **not** set or `false`, `generate` resolves to an `Output`:
+  - `{ data, provider, model, raw? }`.
+- If `stream` is `true` for a provider (`google`, `openai`, `deepseek`, or `mistral`), `generate` resolves to an async iterable of chunks:
+  - You can use `for await (const chunk of result) { ... }`.
+  - For Gemini, each `chunk` is a JSON event; you can drill into `candidates[0].content.parts[0].text` to get only the text.
+
 ### 1. Creating the Client
 
 Create a new `genChat` instance with the providers you want to use:
@@ -265,6 +279,8 @@ const ai = new genChat({
 
 ### 2. Calling Google Gemini
 
+#### Non-streaming
+
 ```ts
 const result = await ai.generate({
   google: {
@@ -279,6 +295,33 @@ const result = await ai.generate({
 console.log(result.provider); // 'google'
 console.log(result.model);    // 'gemini-2.5-flash-lite'
 console.log(result.data);     // summarized text
+```
+
+#### Streaming (Gemini)
+
+```ts
+const res = await ai.generate({
+  google: {
+    model: 'gemini-2.5-flash-lite',
+    prompt: 'Explain Vercel in 5 lines.',
+    system: 'Act like you are the maker of Vercel and answer accordingly.',
+    maxTokens: 500,
+    stream: true,
+  },
+});
+
+if (!(Symbol.asyncIterator in Object(res))) {
+  throw new Error('Expected streaming result to be async iterable');
+}
+
+for await (const chunk of res as AsyncIterable<any>) {
+  const text =
+    chunk?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+  if (text) {
+    console.log(text); // only the text from each streamed event
+  }
+}
 ```
 
 ### 3. Calling OpenAI (Responses API)
@@ -418,12 +461,15 @@ The `src/` directory is included for compilation.
 ## Limitations (Current)
 
 This project is currently in an early stage and has several limitations:
-
+ 
 - Only single-prompt text generation is supported (no explicit chat/history abstraction yet).
-- No streaming APIs are exposed.
+- Streaming is basic and low-level:
+  - It returns provider-specific JSON events (for example, Gemini `candidates[].content.parts[].text`).
+  - You are responsible for extracting the text you care about from each chunk.
 - No structured/JSON output helpers are provided.
 - No React/Next.js integrations or hooks are included.
 - Output normalization across providers (e.g. always using `data`) is still being finalized.
+
 
 These limitations are intentional for now to keep the core small and focused while the API surface is still evolving.
 
