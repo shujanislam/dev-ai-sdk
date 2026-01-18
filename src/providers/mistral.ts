@@ -29,17 +29,17 @@ export async function mistralProvider(provider: Provider, apiKey: string): Promi
 
   const text = data.choices?.[0]?.message?.content ?? '';
 
-  if(provider?.raw === true){
+  if (provider?.raw === true) {
     return {
-      text,
+      data: text,
       provider: 'mistral',
       model: provider.mistral.model,
       raw: data,
-    }; 
+    };
   }
 
   return {
-    text,
+    data: text,
     provider: 'mistral',
     model: provider.mistral.model,
   };

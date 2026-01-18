@@ -27,17 +27,17 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
     data.output?.[0]?.content?.map((c: any) => c.text).join("") ??
     "";
 
-  if(provider?.raw === true){
+  if (provider?.raw === true) {
     return {
-      text,
+      data: text,
       provider: 'openai',
       model: provider.openai.model,
       raw: data,
-    }; 
+    };
   }
 
   return {
-    text,
+    data: text,
     provider: 'openai',
     model: provider.openai.model,
   };
