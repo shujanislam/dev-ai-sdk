@@ -1,0 +1,9 @@
+node_modules/
+src/
+.env
+.gitignore
+.git
+.gitattributes
+tsconfig.json
+*.tgz
+.DS_Store
