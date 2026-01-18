@@ -1,5 +1,5 @@
 import type { Provider, Output } from '../types/types';
-import { googleProvider } from '../providers/google';
+import { googleCoreProvider } from '../providers/google-core';
 import { openaiProvider } from '../providers/openai';
 import { deepseekProvider } from '../providers/deepseek';
 import { mistralProvider } from '../providers/mistral';
@@ -28,6 +28,12 @@ export async function fallbackEngine(
     originalProvider.deepseek ??
     originalProvider.mistral;
 
+  const wasStreaming =
+    originalProvider.google?.stream === true ||
+    originalProvider.openai?.stream === true ||
+    originalProvider.deepseek?.stream === true ||
+    originalProvider.mistral?.stream === true;
+
   if (!sourceConfig) {
     throw new SDKError('No original provider config found for fallback', 'core');
   }
@@ -47,7 +53,7 @@ export async function fallbackEngine(
           maxTokens: sourceConfig.maxTokens,
           raw: sourceConfig.raw,
         };
-        return await googleProvider(nextProvider, sdkConfig.google!.apiKey);
+        return await googleCoreProvider(nextProvider, sdkConfig.google!.apiKey);
       }
 
       if (candidate === 'openai') {

@@ -61,12 +61,22 @@ export class genChat{
  
       throw new SDKError('No provider passed', 'core');
     } catch (err) {
-      if (err instanceof SDKError && this.sdkConfig.fallback === true) {
-        // try other configured providers via fallback engine
+      const isStreaming =
+        provider.google?.stream === true ||
+        provider.openai?.stream === true ||
+        provider.deepseek?.stream === true ||
+        provider.mistral?.stream === true;
+
+      if (
+        !isStreaming &&
+        err instanceof SDKError &&
+        this.sdkConfig.fallback === true
+      ) {
+        // non-streaming calls can use fallback engine
         return await fallbackEngine(err.provider, this.sdkConfig, provider);
       }
       
-      if(err instanceof SDKError){
+      if (err instanceof SDKError) {
         throw err;
       }
  

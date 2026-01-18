@@ -36,6 +36,6 @@ if (!(Symbol.asyncIterator in Object(res))) {
 }
 
 for await (const chunk of res as AsyncIterable<string>) {
-  console.log(chunk.candidates);
+  console.log(chunk);
 }
 
