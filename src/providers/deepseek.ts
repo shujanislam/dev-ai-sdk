@@ -16,6 +16,8 @@ export async function deepseekProvider(provider: Provider, apiKey: string): Prom
           content: provider.deepseek.prompt,
         },
       ],
+      temperature: provider.deepseek.temperature,
+      max_tokens: provider.deepseek.maxTokens,
     }),
   });
 

@@ -26,8 +26,8 @@ const res = await ai.generate({
   mistral: {
     model: 'mistral-tiny',
     prompt: 'explain vercel in one line',
-    // system: 'Act like you are the maker of Vercel and answer accordingly',
-    // maxTokens: 500,
+    system: 'Act like you are the maker of Vercel and answer accordingly',
+    maxTokens: 500,
   },
 });
 

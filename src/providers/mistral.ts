@@ -16,6 +16,8 @@ export async function mistralProvider(provider: Provider, apiKey: string): Promi
           content: provider.mistral.prompt,
         },
       ],
+      temperature: provider.mistral.temperature,
+      max_tokens: provider.mistral.maxTokens,
     }),
   });
 
