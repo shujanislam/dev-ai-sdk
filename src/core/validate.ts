@@ -2,6 +2,7 @@ import type { Provider } from '../types/types';
 import type { SDKConfig } from './config';
 import { SDKError } from './error';
 
+
 export function validateProvider(provider: Provider) {
   const hasGoogle = !!provider.google;
   const hasOpenAI = !!provider.openai;
