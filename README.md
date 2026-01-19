@@ -161,7 +161,9 @@ console.log(result.data);
 
 ### Streaming Responses
 
-Get real-time responses for long outputs:
+Get real-time responses for long outputs. Streaming returns **full event objects** with access to all metadata:
+
+#### Google Gemini Streaming
 
 ```ts
 const stream = await ai.generate({
@@ -172,14 +174,61 @@ const stream = await ai.generate({
   },
 });
 
-// Check if result is a stream
 if (Symbol.asyncIterator in Object(stream)) {
-  for await (const chunk of stream) {
-    // Handle streaming data (provider-specific format)
-    process.stdout.write(chunk?.candidates?.[0]?.content?.parts?.[0]?.text || '');
+  for await (const event of stream) {
+    // Access the streamed text
+    const text = event.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) process.stdout.write(text);
+    
+    // Access metadata from the same event
+    if (event.usageMetadata) {
+      console.log(`Tokens: prompt=${event.usageMetadata.promptTokenCount}, output=${event.usageMetadata.candidatesTokenCount}`);
+    }
   }
-} else {
-  console.log(stream.data);
+}
+```
+
+#### OpenAI Streaming
+
+```ts
+const stream = await ai.generate({
+  openai: {
+    model: 'gpt-4o-mini',
+    prompt: 'Write a 500-word essay on AI ethics.',
+    stream: true,
+  },
+});
+
+if (Symbol.asyncIterator in Object(stream)) {
+  for await (const event of stream) {
+    // Access the streamed text
+    const text = event.choices?.[0]?.delta?.content;
+    if (text) process.stdout.write(text);
+    
+    // Access finish reason
+    if (event.choices?.[0]?.finish_reason) {
+      console.log(`Finished: ${event.choices[0].finish_reason}`);
+    }
+  }
+}
+```
+
+#### DeepSeek & Mistral Streaming
+
+```ts
+const stream = await ai.generate({
+  deepseek: {
+    model: 'deepseek-chat',
+    prompt: 'Write a poem...',
+    stream: true,
+  },
+});
+
+if (Symbol.asyncIterator in Object(stream)) {
+  for await (const event of stream) {
+    const text = event.choices?.[0]?.delta?.content || event.choices?.[0]?.message?.content;
+    if (text) process.stdout.write(text);
+  }
 }
 ```
 
@@ -269,6 +318,92 @@ All providers support:
 | `maxTokens` | number | ❌ | — | Max response length in tokens |
 | `stream` | boolean | ❌ | false | Stream responses in real-time |
 | `raw` | boolean | ❌ | false | Include full provider response |
+
+---
+
+## Streaming Event Structure
+
+Each streaming event is a full parsed object from the provider. Here's what you get from each:
+
+### Google Gemini Event
+
+```ts
+{
+  candidates: [
+    {
+      content: {
+        parts: [
+          { text: "streaming text chunk here" }
+        ],
+        role: "model"
+      },
+      finishReason: "STOP",
+      index: 0
+    }
+  ],
+  usageMetadata: {
+    promptTokenCount: 8,
+    candidatesTokenCount: 25,
+    totalTokenCount: 33
+  },
+  modelVersion: "gemini-2.5-flash"
+}
+```
+
+### OpenAI Event
+
+```ts
+{
+  id: "chatcmpl-...",
+  object: "chat.completion.chunk",
+  created: 1234567890,
+  model: "gpt-4o-mini",
+  choices: [
+    {
+      index: 0,
+      delta: { content: "streaming text chunk" },
+      finish_reason: null
+    }
+  ]
+}
+```
+
+### DeepSeek Event
+
+```ts
+{
+  id: "chatcmpl-...",
+  choices: [
+    {
+      index: 0,
+      delta: { content: "streaming text chunk" },
+      finish_reason: null
+    }
+  ],
+  usage: {
+    prompt_tokens: 10,
+    completion_tokens: 5
+  }
+}
+```
+
+### Mistral Event
+
+```ts
+{
+  id: "...",
+  object: "text_completion",
+  created: 1234567890,
+  model: "mistral-small-latest",
+  choices: [
+    {
+      index: 0,
+      message: { content: "streaming text chunk" },
+      finish_reason: null
+    }
+  ]
+}
+```
 
 ---
 
@@ -367,19 +502,25 @@ try {
 
 ### Streaming with Real-Time Updates
 
+A practical example combining streaming with line-by-line display:
+
 ```ts
 const stream = await ai.generate({
   google: {
     model: 'gemini-2.5-flash-lite',
-    prompt: 'Write a poem...',
+    prompt: 'Write a haiku about programming...',
     stream: true,
   },
 });
 
 if (Symbol.asyncIterator in Object(stream)) {
-  for await (const chunk of stream) {
-    process.stdout.write(chunk?.candidates?.[0]?.content?.parts?.[0]?.text || '');
+  for await (const event of stream) {
+    const text = event.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) {
+      process.stdout.write(text);
+    }
   }
+  console.log(); // newline when done
 }
 ```
 
@@ -387,10 +528,10 @@ if (Symbol.asyncIterator in Object(stream)) {
 
 ## Limitations
 
-This is v0.0.2 — early but functional. Currently:
+This is v0.0.3 — early but functional. Currently:
 
 - Single-turn text generation (no multi-turn conversation history yet)
-- Streaming returns provider-specific JSON (you extract text manually)
+- Streaming returns full provider event objects (extract what you need)
 - No function calling / tool use yet
 - No JSON mode / structured output yet
 
