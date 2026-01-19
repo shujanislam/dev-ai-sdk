@@ -4,7 +4,7 @@ import { SDKError } from '../core/error';
 export async function* openaiStreamProvider(
   provider: Provider,
   apiKey: string,
-): AsyncGenerator<string> {
+): AsyncGenerator<any> {
   if (!provider.openai) {
     throw new SDKError('openai provider config missing', 'openai');
   }
@@ -60,17 +60,10 @@ export async function* openaiStreamProvider(
         continue;
       }
 
-      // OpenAI Responses streaming format: text chunks can appear in
-      // event.output[0].content[*].text or event.output_text.
-      const text =
-        event.output_text ??
-        (event.output?.[0]?.content
-          ?.map((c: any) => (typeof c.text === 'string' ? c.text : ''))
-          .join('') ?? '');
-
-      if (text) {
-        yield text;
-      }
+       // OpenAI Responses streaming format: text chunks can appear in
+       // event.output[0].content[*].text or event.output_text.
+       // Now yield the full event object for user access to all fields
+       yield event;
     }
   }
 }

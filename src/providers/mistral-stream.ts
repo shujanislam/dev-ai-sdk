@@ -4,7 +4,7 @@ import { SDKError } from '../core/error';
 export async function* mistralStreamProvider(
   provider: Provider,
   apiKey: string,
-): AsyncGenerator<string> {
+): AsyncGenerator<any> {
   if (!provider.mistral) {
     throw new SDKError('mistral provider config missing', 'mistral');
   }
@@ -65,14 +65,10 @@ export async function* mistralStreamProvider(
         continue;
       }
 
-      // Mistral streaming format is assumed similar to non-streaming:
-      // text in event.choices[0].message.content or delta content
-      const text =
-        event.choices?.[0]?.message?.content ?? '';
-
-      if (text) {
-        yield text;
-      }
+       // Mistral streaming format is assumed similar to non-streaming:
+       // text in event.choices[0].message.content or delta content
+       // Now yield the full event object for user access to all fields
+       yield event;
     }
   }
 }

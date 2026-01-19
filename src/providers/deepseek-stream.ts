@@ -4,7 +4,7 @@ import { SDKError } from '../core/error';
 export async function* deepseekStreamProvider(
   provider: Provider,
   apiKey: string,
-): AsyncGenerator<string> {
+): AsyncGenerator<any> {
   if (!provider.deepseek) {
     throw new SDKError('deepseek provider config missing', 'deepseek');
   }
@@ -65,17 +65,10 @@ export async function* deepseekStreamProvider(
         continue;
       }
 
-      // DeepSeek streaming format is assumed similar to non-streaming:
-      // text in event.output_text or event.output[0].content[*].text
-      const text =
-        event.output_text ??
-        (event.output?.[0]?.content
-          ?.map((c: any) => (typeof c.text === 'string' ? c.text : ''))
-          .join('') ?? '');
-
-      if (text) {
-        yield text;
-      }
+       // DeepSeek streaming format is assumed similar to non-streaming:
+       // text in event.output_text or event.output[0].content[*].text
+       // Now yield the full event object for user access to all fields
+       yield event;
     }
   }
 }
