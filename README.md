@@ -161,76 +161,50 @@ console.log(result.data);
 
 ### Streaming Responses
 
-Get real-time responses for long outputs. Streaming returns **full event objects** with access to all metadata:
-
-#### Google Gemini Streaming
+Get real-time responses for long outputs. All providers return a unified `StreamOutput` format:
 
 ```ts
+import { genChat, type StreamOutput } from 'dev-ai-sdk';
+
 const stream = await ai.generate({
   google: {
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-2.5-flash',
     prompt: 'Write a 500-word essay on AI ethics.',
     stream: true,
   },
 });
 
+// Check if result is a stream
 if (Symbol.asyncIterator in Object(stream)) {
-  for await (const event of stream) {
-    // Access the streamed text
-    const text = event.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (text) process.stdout.write(text);
-    
-    // Access metadata from the same event
-    if (event.usageMetadata) {
-      console.log(`Tokens: prompt=${event.usageMetadata.promptTokenCount}, output=${event.usageMetadata.candidatesTokenCount}`);
+  // Loop through streaming chunks - same pattern for all 4 providers
+  for await (const chunk of stream as AsyncIterable<StreamOutput>) {
+    // chunk is a StreamOutput with unified structure:
+    // - chunk.text: the streamed text content
+    // - chunk.done: boolean indicating if stream is complete
+    // - chunk.provider: 'google' | 'openai' | 'deepseek' | 'mistral'
+    // - chunk.tokens?: { prompt?, completion?, total? } (if available from provider)
+    // - chunk.raw: raw provider event for advanced use
+
+    process.stdout.write(chunk.text);
+
+    // Show metadata when stream is done
+    if (chunk.done) {
+      console.log('\nStream completed');
+      console.log(`Provider: ${chunk.provider}`);
+      if (chunk.tokens) {
+        console.log(`Tokens used: ${chunk.tokens.total}`);
+      }
     }
   }
 }
 ```
 
-#### OpenAI Streaming
+**Why `StreamOutput`?**
 
-```ts
-const stream = await ai.generate({
-  openai: {
-    model: 'gpt-4o-mini',
-    prompt: 'Write a 500-word essay on AI ethics.',
-    stream: true,
-  },
-});
-
-if (Symbol.asyncIterator in Object(stream)) {
-  for await (const event of stream) {
-    // Access the streamed text
-    const text = event.choices?.[0]?.delta?.content;
-    if (text) process.stdout.write(text);
-    
-    // Access finish reason
-    if (event.choices?.[0]?.finish_reason) {
-      console.log(`Finished: ${event.choices[0].finish_reason}`);
-    }
-  }
-}
-```
-
-#### DeepSeek & Mistral Streaming
-
-```ts
-const stream = await ai.generate({
-  deepseek: {
-    model: 'deepseek-chat',
-    prompt: 'Write a poem...',
-    stream: true,
-  },
-});
-
-if (Symbol.asyncIterator in Object(stream)) {
-  for await (const event of stream) {
-    const text = event.choices?.[0]?.delta?.content || event.choices?.[0]?.message?.content;
-    if (text) process.stdout.write(text);
-  }
-}
-```
+- **Unified API** – Same code works for Google, OpenAI, DeepSeek, and Mistral
+- **Consistent fields** – Always access `chunk.text`, never worry about provider-specific paths
+- **Access to metadata** – Token counts, completion status, and provider name
+- **Raw access** – `chunk.raw` gives you the full provider event if you need it
 
 ---
 
@@ -321,89 +295,53 @@ All providers support:
 
 ---
 
-## Streaming Event Structure
+## StreamOutput Type Reference
 
-Each streaming event is a full parsed object from the provider. Here's what you get from each:
-
-### Google Gemini Event
+All streaming responses return a unified `StreamOutput` type, regardless of provider:
 
 ```ts
-{
-  candidates: [
-    {
-      content: {
-        parts: [
-          { text: "streaming text chunk here" }
-        ],
-        role: "model"
-      },
-      finishReason: "STOP",
-      index: 0
-    }
-  ],
-  usageMetadata: {
-    promptTokenCount: 8,
-    candidatesTokenCount: 25,
-    totalTokenCount: 33
+type StreamOutput = {
+  text: string;              // The streamed text chunk
+  done: boolean;             // True when stream is complete
+  tokens?: {
+    prompt?: number;         // Prompt tokens (if available)
+    completion?: number;     // Completion tokens (if available)
+    total?: number;          // Total tokens (if available)
+  };
+  raw: any;                  // Raw provider event object
+  provider: string;          // 'google' | 'openai' | 'deepseek' | 'mistral'
+}
+```
+
+**Example:**
+
+```ts
+const stream = await ai.generate({
+  google: {
+    model: 'gemini-2.5-flash',
+    prompt: 'Hello!',
+    stream: true,
   },
-  modelVersion: "gemini-2.5-flash"
-}
-```
+});
 
-### OpenAI Event
-
-```ts
-{
-  id: "chatcmpl-...",
-  object: "chat.completion.chunk",
-  created: 1234567890,
-  model: "gpt-4o-mini",
-  choices: [
-    {
-      index: 0,
-      delta: { content: "streaming text chunk" },
-      finish_reason: null
-    }
-  ]
-}
-```
-
-### DeepSeek Event
-
-```ts
-{
-  id: "chatcmpl-...",
-  choices: [
-    {
-      index: 0,
-      delta: { content: "streaming text chunk" },
-      finish_reason: null
-    }
-  ],
-  usage: {
-    prompt_tokens: 10,
-    completion_tokens: 5
+if (Symbol.asyncIterator in Object(stream)) {
+  for await (const chunk of stream as AsyncIterable<StreamOutput>) {
+    console.log(chunk.text);              // "Hello" or similar
+    console.log(chunk.done);              // false, then true at end
+    console.log(chunk.provider);          // "google"
+    console.log(chunk.tokens?.total);     // 42 (if available)
+    console.log(chunk.raw);               // Full Gemini event object
   }
 }
 ```
 
-### Mistral Event
+**Key Benefits:**
 
-```ts
-{
-  id: "...",
-  object: "text_completion",
-  created: 1234567890,
-  model: "mistral-small-latest",
-  choices: [
-    {
-      index: 0,
-      message: { content: "streaming text chunk" },
-      finish_reason: null
-    }
-  ]
-}
-```
+- ✅ Same interface for all 4 providers
+- ✅ Always access `chunk.text` for content
+- ✅ Always access `chunk.done` to detect completion
+- ✅ Token info included when provider supports it
+- ✅ `chunk.raw` for provider-specific advanced use cases
 
 ---
 
@@ -502,25 +440,36 @@ try {
 
 ### Streaming with Real-Time Updates
 
-A practical example combining streaming with line-by-line display:
+A practical example combining streaming with unified `StreamOutput`:
 
 ```ts
+import { genChat, type StreamOutput } from 'dev-ai-sdk';
+
+const ai = new genChat({
+  google: { apiKey: process.env.GOOGLE_API_KEY! },
+});
+
 const stream = await ai.generate({
   google: {
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-2.5-flash',
     prompt: 'Write a haiku about programming...',
     stream: true,
   },
 });
 
 if (Symbol.asyncIterator in Object(stream)) {
-  for await (const event of stream) {
-    const text = event.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (text) {
-      process.stdout.write(text);
+  for await (const chunk of stream as AsyncIterable<StreamOutput>) {
+    // Unified interface - works the same for all 4 providers
+    process.stdout.write(chunk.text);
+
+    if (chunk.done) {
+      console.log('\n');
+      console.log(`Completed from ${chunk.provider}`);
+      if (chunk.tokens?.total) {
+        console.log(`Used ${chunk.tokens.total} tokens`);
+      }
     }
   }
-  console.log(); // newline when done
 }
 ```
 
@@ -531,7 +480,7 @@ if (Symbol.asyncIterator in Object(stream)) {
 This is v0.0.3 — early but functional. Currently:
 
 - Single-turn text generation (no multi-turn conversation history yet)
-- Streaming returns full provider event objects (extract what you need)
+- Streaming returns unified `StreamOutput` objects (consistent across all providers)
 - No function calling / tool use yet
 - No JSON mode / structured output yet
 
