@@ -1,10 +1,10 @@
-import type { Provider } from '../types/types';
+import type { Provider, StreamOutput } from '../types/types';
 import { SDKError } from '../core/error';
 
 export async function* googleStreamProvider(
   provider: Provider,
   apiKey: string,
-): AsyncGenerator<any> {
+): AsyncGenerator<StreamOutput> {
   if (!provider.google) {
     throw new SDKError('google provider config missing', 'google');
   }
@@ -83,9 +83,25 @@ export async function* googleStreamProvider(
 
            // events should be an array of streaming event objects
            if (Array.isArray(events)) {
-             for (const event of events) {
-               yield event;
-             }
+              for (const event of events) {
+               const text = event.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+               
+               const usage = event.usageMetadata;
+
+               const output: StreamOutput = {
+                 text,
+                 done: event.candidates?.[0]?.finishReason === 'STOP',
+                 tokens: usage
+                 ? {
+                     prompt: usage.promptTokenCount,
+                     completion: usage.candidatesTokenCount,
+                     total: usage.totalTokenCount,
+                 } : undefined,
+                 raw: event,
+                 provider: 'google',
+               };
+                yield output;
+              }
            }
 
            // Remove processed JSON from buffer
@@ -111,9 +127,25 @@ export async function* googleStreamProvider(
          const events = JSON.parse(jsonPart);
 
          if (Array.isArray(events)) {
-           for (const event of events) {
-             yield event;
-           }
+            for (const event of events) {
+               const text = event.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+               
+               const usage = event.usageMetadata;
+
+               const output: StreamOutput = {
+                 text,
+                 done: event.candidates?.[0]?.finishReason === 'STOP',
+                 tokens: usage
+                 ? {
+                     prompt: usage.promptTokenCount,
+                     completion: usage.candidatesTokenCount,
+                     total: usage.totalTokenCount,
+                 } : undefined,
+                 raw: event,
+                 provider: 'google',
+               };
+             yield output;
+            }
          }
        } catch (err) {
          console.error('Failed to parse final Google stream buffer:', (err as Error).message);

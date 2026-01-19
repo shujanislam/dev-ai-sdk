@@ -41,10 +41,21 @@ export type Provider = {
 
 }
 
-
 export type Output = {
   data: string;
   provider: string;
   model: string;
   raw?: any;
+}
+
+export type StreamOutput = {
+  text: string;
+  done: boolean;
+  tokens? : {
+    prompt?: number;
+    completion?: number;
+    total?: number;
+  };
+  raw: any;
+  provider: string;
 }

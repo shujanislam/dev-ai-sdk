@@ -1,4 +1,4 @@
-import type { Provider, Output } from '../types/types';
+import type { Provider, Output, StreamOutput } from '../types/types';
 import { googleCoreProvider } from './google-core';
 import { googleStreamProvider } from './google-stream';
 
@@ -6,7 +6,7 @@ import { googleStreamProvider } from './google-stream';
 export async function googleProvider(
   provider: Provider,
   apiKey: string,
-): Promise<Output | AsyncIterable<string>> {
+): Promise<Output | AsyncIterable<StreamOutput>> {
   if (provider.google && provider.google.stream === true) {
     return googleStreamProvider(provider, apiKey);
   }

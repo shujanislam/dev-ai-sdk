@@ -1,4 +1,4 @@
-import type { Provider, Output } from './types/types';
+import type { Provider, Output, StreamOutput } from './types/types';
 import { googleCoreProvider } from './providers/google-core';
 import { googleStreamProvider } from './providers/google-stream';
 import { openaiProvider } from './providers/openai';
@@ -27,7 +27,7 @@ export class genChat{
     };
   }
  
-   async generate(provider: Provider): Promise<Output | AsyncGenerator<any>> {
+   async generate(provider: Provider): Promise<Output | AsyncGenerator<StreamOutput>> {
     validateProvider(provider);
     
     try {

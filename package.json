@@ -1,6 +1,6 @@
 {
   "name": "dev-ai-sdk",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Universal AI SDK with a single syntax for multiple LLM providers",
   "type": "module",
   "main": "dist/index.js",
@@ -45,7 +45,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
   }
 }
 

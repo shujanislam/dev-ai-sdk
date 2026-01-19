@@ -1,10 +1,10 @@
-import type { Provider } from '../types/types';
+import type { Provider, StreamOutput } from '../types/types';
 import { SDKError } from '../core/error';
 
 export async function* deepseekStreamProvider(
   provider: Provider,
   apiKey: string,
-): AsyncGenerator<any> {
+): AsyncGenerator<StreamOutput> {
   if (!provider.deepseek) {
     throw new SDKError('deepseek provider config missing', 'deepseek');
   }
@@ -65,10 +65,24 @@ export async function* deepseekStreamProvider(
         continue;
       }
 
-       // DeepSeek streaming format is assumed similar to non-streaming:
-       // text in event.output_text or event.output[0].content[*].text
-       // Now yield the full event object for user access to all fields
-       yield event;
+       // DeepSeek streaming format: choices[0].delta.content
+       const text = event.choices?.[0]?.delta?.content ?? '';
+
+       const output: StreamOutput = {
+         text,
+         done: event.choices?.[0]?.finish_reason === 'stop',
+         tokens: event.usage
+           ? {
+               prompt: event.usage.prompt_tokens,
+               completion: event.usage.completion_tokens,
+               total: event.usage.prompt_tokens + event.usage.completion_tokens,
+             }
+           : undefined,
+         raw: event,
+         provider: 'deepseek',
+       };
+
+       yield output;
     }
   }
 }
