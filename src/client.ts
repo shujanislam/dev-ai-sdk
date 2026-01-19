@@ -27,7 +27,7 @@ export class genChat{
     };
   }
  
-  async generate(provider: Provider): Promise<Output | AsyncIterable<string>> {
+   async generate(provider: Provider): Promise<Output | AsyncGenerator<any>> {
     validateProvider(provider);
     
     try {
