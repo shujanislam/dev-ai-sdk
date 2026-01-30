@@ -1,4 +1,4 @@
-import type { Provider, Output, StreamOutput, CouncilProvider } from './types/types';
+import type { Provider, Output, StreamOutput, CouncilProvider, CouncilDecision } from './types/types';
 import { googleCoreProvider } from './providers/google-core';
 import { googleStreamProvider } from './providers/google-stream';
 import { openaiProvider } from './providers/openai';
@@ -61,14 +61,14 @@ export class genChat{
         return await mistralProvider(provider, this.sdkConfig.mistral!.apiKey);
       }
  
-      if (provider.anthropic) {
-        if (provider.anthropic.stream === true) {
-          return anthropicStreamProvider(provider, this.sdkConfig.anthropic!.apiKey);
-        }
-        return await anthropicProvider(provider, this.sdkConfig.anthropic!.apiKey);
-      }
+       if (provider.anthropic) {
+         if (provider.anthropic.stream === true) {
+           throw new SDKError('Streaming not yet supported for Anthropic', 'anthropic', 'STREAMING_NOT_SUPPORTED');
+         }
+         return await anthropicProvider(provider, this.sdkConfig.anthropic!.apiKey);
+       }
 
-      throw new SDKError('No provider passed', 'core');
+       throw new SDKError('No provider passed', 'core', 'NO_PROVIDER');
     } catch (err) {
       const isStreaming =
         provider.google?.stream === true ||
@@ -90,12 +90,70 @@ export class genChat{
         throw err;
       }
  
-      throw new SDKError('Unexpected Error', 'core');
+       throw new SDKError('Unexpected Error', 'core', 'UNEXPECTED_ERROR');
     }
   }
 
-  async councilGenerate(councilProvider: CouncilProvider) {
-    console.log(councilProvider);
-  }
+     async councilGenerate(councilProvider: CouncilProvider): Promise<CouncilDecision> {
+       try {
+         // Extract judge provider and model
+         const judge = this.extractAgent(councilProvider.judge);
+         
+         // Extract all member providers and models
+         const members = this.extractAgents(councilProvider.members);
+         
+         // Validate that we have at least one member
+         if (members.length === 0) {
+           throw new SDKError('At least one member agent is required', 'core', 'NO_MEMBERS');
+         }
+         
+         console.log('Judge:', judge);
+         console.log('Members:', members);
+         console.log('Prompt:', councilProvider.prompt);
+         
+         // TODO: Implement council deliberation logic
+         throw new SDKError('Council deliberation not yet implemented', 'core', 'NOT_IMPLEMENTED');
+       } catch (err) {
+         if (err instanceof SDKError) {
+           throw err;
+         }
+         throw new SDKError('Unexpected Error in council generation', 'core', 'UNEXPECTED_ERROR');
+       }
+     }
+
+    private extractAgent(agent: any): { provider: string; model: string } | null {
+      // Check each provider field in the agent object
+      // CouncilAgentType has providers as strings, so we handle them as such
+      if (agent.google) {
+        return { provider: 'google', model: agent.google };
+      }
+      if (agent.openai) {
+        return { provider: 'openai', model: agent.openai };
+      }
+      if (agent.deepseek) {
+        return { provider: 'deepseek', model: agent.deepseek };
+      }
+      if (agent.mistral) {
+        return { provider: 'mistral', model: agent.mistral };
+      }
+      if (agent.anthropic) {
+        return { provider: 'anthropic', model: agent.anthropic };
+      }
+      
+      return null;
+    }
+
+    private extractAgents(agents: any[]): Array<{ provider: string; model: string }> {
+      const extractedAgents: Array<{ provider: string; model: string }> = [];
+      
+      agents.forEach((agent) => {
+        const extracted = this.extractAgent(agent);
+        if (extracted) {
+          extractedAgents.push(extracted);
+        }
+      });
+      
+      return extractedAgents;
+    }
 }
 

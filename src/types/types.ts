@@ -70,33 +70,23 @@ export type StreamOutput = {
 }
 
 export type CouncilAgentType = {
-  google?: {
-    model: string;
-  };
-
-  openai?: {
-    model: string;
-  };
-
-  deepseek?: {
-    model: string;
-  };
-
-  mistral?: {
-    model: string;
-  };
-
-  anthropic?: {
-    model: string;
-  };
+  google?: string;
+  openai?: string;
+  deepseek?: string;
+  mistral?: string;
+  anthropic?: string;
 }
 
 export type CouncilProvider = {
-  judge: CouncilAgentType[];
+  judge: CouncilAgentType;
   members: CouncilAgentType[];
   prompt: string;
   system?: string;
   temperature?: number;
   maxTokens?: number;
   raw?: boolean;
-} 
+}
+
+export type CouncilDecision = {
+  decision: string;
+}
