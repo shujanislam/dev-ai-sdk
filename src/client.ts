@@ -1,4 +1,4 @@
-import type { Provider, Output, StreamOutput } from './types/types';
+import type { Provider, Output, StreamOutput, CouncilProvider } from './types/types';
 import { googleCoreProvider } from './providers/google-core';
 import { googleStreamProvider } from './providers/google-stream';
 import { openaiProvider } from './providers/openai';
@@ -7,6 +7,7 @@ import { deepseekProvider } from './providers/deepseek';
 import { deepseekStreamProvider } from './providers/deepseek-stream';
 import { mistralProvider } from './providers/mistral';
 import { mistralStreamProvider } from './providers/mistral-stream';
+import { anthropicProvider } from './providers/anthropic';
 import { SDKError } from './core/error';
 import { validateConfig, validateProvider } from './core/validate';
 import type { SDKConfig } from './core/config';
@@ -23,6 +24,7 @@ export class genChat{
       openai: sdkConfig.openai ? { ...sdkConfig.openai } : undefined,
       deepseek: sdkConfig.deepseek ? { ...sdkConfig.deepseek } : undefined,
       mistral: sdkConfig.mistral ? { ...sdkConfig.mistral } : undefined,
+      anthropic: sdkConfig.anthropic ? { ...sdkConfig.anthropic } : undefined,
       fallback: sdkConfig.fallback,
     };
   }
@@ -59,13 +61,21 @@ export class genChat{
         return await mistralProvider(provider, this.sdkConfig.mistral!.apiKey);
       }
  
+      if (provider.anthropic) {
+        if (provider.anthropic.stream === true) {
+          return anthropicStreamProvider(provider, this.sdkConfig.anthropic!.apiKey);
+        }
+        return await anthropicProvider(provider, this.sdkConfig.anthropic!.apiKey);
+      }
+
       throw new SDKError('No provider passed', 'core');
     } catch (err) {
       const isStreaming =
         provider.google?.stream === true ||
         provider.openai?.stream === true ||
         provider.deepseek?.stream === true ||
-        provider.mistral?.stream === true;
+        provider.mistral?.stream === true ||
+        provider.anthropic?.stream === true;
 
       if (
         !isStreaming &&
@@ -82,6 +92,10 @@ export class genChat{
  
       throw new SDKError('Unexpected Error', 'core');
     }
+  }
+
+  async councilGenerate(councilProvider: CouncilProvider) {
+    console.log(councilProvider);
   }
 }
 

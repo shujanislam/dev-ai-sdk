@@ -15,6 +15,10 @@ export type SDKConfig = {
     apiKey: string;
   };
 
+  anthropic?: {
+    apiKey: string;
+  };
+  
   fallback?: boolean;
 };
 

@@ -17,7 +17,8 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "dev-test": "tsx src/test.ts"
   },
   "repository": {
     "type": "git",

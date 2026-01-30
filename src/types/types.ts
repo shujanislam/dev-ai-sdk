@@ -39,6 +39,15 @@ export type Provider = {
     stream?: boolean;
   };
 
+  anthropic?: {
+    model: string;
+    prompt: string;
+    system?: string;
+    temperature?: number;
+    maxTokens?: number;
+    raw?: boolean;
+    stream?: boolean;
+  };
 }
 
 export type Output = {
@@ -59,3 +68,35 @@ export type StreamOutput = {
   raw: any;
   provider: string;
 }
+
+export type CouncilAgentType = {
+  google?: {
+    model: string;
+  };
+
+  openai?: {
+    model: string;
+  };
+
+  deepseek?: {
+    model: string;
+  };
+
+  mistral?: {
+    model: string;
+  };
+
+  anthropic?: {
+    model: string;
+  };
+}
+
+export type CouncilProvider = {
+  judge: CouncilAgentType[];
+  members: CouncilAgentType[];
+  prompt: string;
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+  raw?: boolean;
+} 

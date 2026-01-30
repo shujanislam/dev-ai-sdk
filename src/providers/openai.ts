@@ -3,7 +3,7 @@ import { SDKError } from '../core/error';
 
 export async function openaiProvider(provider: Provider, apiKey: string): Promise<Output> {
   if (!provider.openai) {
-    throw new SDKError('openai provider config missing', 'openai');
+    throw new SDKError('openai provider config missing', 'openai', 'CONFIG_ERROR');
   }
 
   const res = await fetch("https://api.openai.com/v1/responses", {
@@ -23,7 +23,7 @@ export async function openaiProvider(provider: Provider, apiKey: string): Promis
   const data = await res.json();
 
   if (!res.ok) {
-    throw new SDKError(`OpenAI error ${res.status}: ${JSON.stringify(data)}`, 'openai');
+    throw new SDKError(`OpenAI error ${res.status}: ${JSON.stringify(data)}`, 'openai', 'API_ERROR');
   }
 
   const text =

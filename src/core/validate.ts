@@ -8,8 +8,9 @@ export function validateProvider(provider: Provider) {
   const hasOpenAI = !!provider.openai;
   const hasDeepSeek = !!provider.deepseek;
   const hasMistral = !!provider.mistral;
+  const hasAnthropic = !!provider.anthropic;
 
-  const totalProviders = Number(hasGoogle) + Number(hasOpenAI) + Number(hasDeepSeek) + Number(hasMistral);
+  const totalProviders = Number(hasGoogle) + Number(hasOpenAI) + Number(hasDeepSeek) + Number(hasMistral) + Number(hasAnthropic);
 
   if (totalProviders === 0) throw new SDKError("No provider passed", "core");
   if (totalProviders > 1) throw new SDKError("Pass only one provider", "core");
@@ -33,6 +34,11 @@ export function validateProvider(provider: Provider) {
     if (!provider.mistral!.model.trim()) throw new SDKError("mistral.model is required", "mistral");
     if (!provider.mistral!.prompt.trim()) throw new SDKError("mistral.prompt is required", "mistral");
   }
+
+  if (hasAnthropic) {
+    if (!provider.anthropic!.model.trim()) throw new SDKError("anthropic.model is required", "anthropic");
+    if (!provider.anthropic!.prompt.trim()) throw new SDKError("anthropic.prompt is required", "anthropic");
+  }
 }
 
 export function validateConfig(sdkConfig: SDKConfig) {
@@ -44,8 +50,9 @@ export function validateConfig(sdkConfig: SDKConfig) {
   const hasOpenAI = !!sdkConfig.openai;
   const hasDeepSeek = !!sdkConfig.deepseek;
   const hasMistral = !!sdkConfig.mistral;
+  const hasAnthropic = !!sdkConfig.anthropic;
 
-  if (!hasGoogle && !hasOpenAI && !hasDeepSeek && !hasMistral) {
+  if (!hasGoogle && !hasOpenAI && !hasDeepSeek && !hasMistral && !hasAnthropic) {
     throw new SDKError('no providers configured', 'core');
   }
 
@@ -74,6 +81,13 @@ export function validateConfig(sdkConfig: SDKConfig) {
     const key = sdkConfig.mistral?.apiKey;
     if (typeof key !== 'string' || key.trim().length === 0) {
       throw new SDKError('mistral.apiKey is required', 'mistral');
+    }
+  }
+
+  if (hasAnthropic) {
+    const key = sdkConfig.anthropic?.apiKey;
+    if (typeof key !== 'string' || key.trim().length === 0) {
+      throw new SDKError('anthropic.apiKey is required', 'anthropic');
     }
   }
 }

@@ -19,7 +19,7 @@ export async function fallbackEngine(
   if (sdkConfig.mistral?.apiKey && failedProvider !== 'mistral') candidates.push('mistral');
 
   if (candidates.length === 0) {
-    throw new SDKError('No fallback providers configured', 'core');
+    throw new SDKError('No fallback providers configured', 'core', 'FALLBACK_CONFIG_ERROR');
   }
 
   const sourceConfig =
@@ -35,7 +35,7 @@ export async function fallbackEngine(
     originalProvider.mistral?.stream === true;
 
   if (!sourceConfig) {
-    throw new SDKError('No original provider config found for fallback', 'core');
+    throw new SDKError('No original provider config found for fallback', 'core', 'FALLBACK_CONFIG_ERROR');
   }
 
   let lastError: unknown;
@@ -101,6 +101,5 @@ export async function fallbackEngine(
     throw lastError;
   }
 
-  throw new SDKError('All fallback providers failed', 'core');
+   throw new SDKError('All fallback providers failed', 'core', 'FALLBACK_ALL_FAILED');
 }
-
