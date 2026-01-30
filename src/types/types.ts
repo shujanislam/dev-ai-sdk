@@ -87,6 +87,3 @@ export type CouncilProvider = {
   raw?: boolean;
 }
 
-export type CouncilDecision = {
-  decision: string;
-}
