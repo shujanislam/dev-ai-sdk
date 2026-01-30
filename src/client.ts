@@ -118,12 +118,15 @@ export class genChat{
             )
           );
 
-          console.log('Member Responses:', memberResponses);
-          console.log('Judge:', judge);
+          const judgeResponse = await this.generate({
+            [judge.provider]: {
+              model: judge.model,
+              prompt: `From the given responses, judge them and give out the best one: ${JSON.stringify(memberResponses)}`
+            }
+          });
 
-          // TODO: Ask judge to pick the best response
-          // For now, just return the first response
-          throw new SDKError('Judge evaluation not yet implemented', 'core', 'NOT_IMPLEMENTED');
+          console.log(judgeResponse);
+
         } catch (err) {
           if (err instanceof SDKError) {
             throw err;
