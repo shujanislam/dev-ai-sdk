@@ -2,7 +2,7 @@
 
 **A unified TypeScript SDK for using multiple AI providers with one simple interface.**
 
-Stop juggling different API docs and client libraries. `dev-ai-sdk` lets you switch between OpenAI, Google Gemini, DeepSeek, and Mistral with zero code changes.
+Stop juggling different API docs and client libraries. `dev-ai-sdk` lets you switch between OpenAI, Google Gemini, DeepSeek, Mistral, and Anthropic Claude with zero code changes. Supports streaming, automatic fallback, and multi-model LLM councils.
 
 ---
 
@@ -10,12 +10,13 @@ Stop juggling different API docs and client libraries. `dev-ai-sdk` lets you swi
 
 Write once, run anywhere. This SDK provides a consistent interface for text generation across multiple LLM providers:
 
-- **OpenAI** (GPT models via Responses API)
+- **OpenAI** (GPT models via Chat Completions API)
 - **Google Gemini** (Gemini models)
 - **DeepSeek** (DeepSeek chat models)
 - **Mistral** (Mistral models)
+- **Anthropic Claude** (Claude 3/3.5 models)
 
-Switch providers, change models, or even combine multiple providers — your code stays the same.
+Switch providers, change models, or even combine multiple providers — your code stays the same. Bonus features: streaming, automatic fallback to other providers, and LLM councils for multi-model decision making.
 
 ---
 
@@ -59,10 +60,12 @@ That's it. No complex setup, no provider-specific boilerplate.
 
 ## Features
 
-✅ **Single Interface** – Same code works across 4 major LLM providers  
+✅ **Single Interface** – Same code works across 5 major LLM providers  
 ✅ **Type-Safe** – Full TypeScript support with proper types  
 ✅ **Minimal** – Tiny, lightweight package (15KB gzipped)  
 ✅ **Streaming** – Built-in streaming support for all providers  
+✅ **Automatic Fallback** – If a provider fails, automatically try others  
+✅ **LLM Council** – Run multiple models in parallel, have a judge synthesize the best answer  
 ✅ **Error Handling** – Unified error handling across all providers  
 ✅ **No Dependencies** – Only `dotenv` for environment variables  
 
@@ -87,6 +90,9 @@ const ai = new genChat({
   },
   mistral: {
     apiKey: process.env.MISTRAL_API_KEY,
+  },
+  anthropic: {
+    apiKey: process.env.ANTHROPIC_API_KEY,
   },
 });
 ```
@@ -157,6 +163,21 @@ const result = await ai.generate({
 console.log(result.data);
 ```
 
+#### Anthropic Claude
+
+```ts
+const result = await ai.generate({
+  anthropic: {
+    model: 'claude-3-5-sonnet-20241022',
+    prompt: 'What is the meaning of life?',
+    temperature: 0.7,
+    maxTokens: 150,
+  },
+});
+
+console.log(result.data);
+```
+
 ---
 
 ### Streaming Responses
@@ -201,10 +222,115 @@ if (Symbol.asyncIterator in Object(stream)) {
 
 **Why `StreamOutput`?**
 
-- **Unified API** – Same code works for Google, OpenAI, DeepSeek, and Mistral
+- **Unified API** – Same code works for all 5 providers
 - **Consistent fields** – Always access `chunk.text`, never worry about provider-specific paths
 - **Access to metadata** – Token counts, completion status, and provider name
 - **Raw access** – `chunk.raw` gives you the full provider event if you need it
+
+---
+
+## Automatic Fallback
+
+If a provider fails, automatically retry with other configured providers:
+
+```ts
+const ai = new genChat({
+  openai: { apiKey: process.env.OPENAI_API_KEY },
+  google: { apiKey: process.env.GOOGLE_API_KEY },
+  fallback: true, // Enable automatic fallback
+});
+
+// Try OpenAI first; if it fails, automatically try Google
+const result = await ai.generate({
+  openai: {
+    model: 'gpt-4o-mini',
+    prompt: 'What is 2+2?',
+  },
+});
+
+console.log(result.provider); // "openai" or "google" depending on which succeeded
+console.log(result.data);
+```
+
+**How Fallback Works:**
+1. First, attempt the configured provider (e.g., OpenAI)
+2. If it fails with a retryable error (network, timeout, rate limit), try the next provider
+3. Each fallback provider uses a sensible default model for that provider (e.g., `gemini-2.5-flash-lite` for Google)
+4. If all providers fail, throw an error
+5. **Note:** Streaming calls (`stream: true`) do not trigger fallback; only non-streaming calls can fall back
+
+**Limitations:**
+- Fallback is disabled for streaming responses
+- Only retryable errors trigger fallback (not validation/config errors)
+- Each fallback attempt uses provider-specific default models
+
+---
+
+## LLM Council
+
+Run the same prompt across multiple models and have a judge synthesize the best answer:
+
+```ts
+import { genChat, type CouncilDecision } from 'dev-ai-sdk';
+
+const ai = new genChat({
+  openai: { apiKey: process.env.OPENAI_API_KEY },
+  google: { apiKey: process.env.GOOGLE_API_KEY },
+  mistral: { apiKey: process.env.MISTRAL_API_KEY },
+  anthropic: { apiKey: process.env.ANTHROPIC_API_KEY },
+});
+
+// Run same prompt across 3 models, judge with OpenAI
+const decision = await ai.councilGenerate({
+  members: [
+    {
+      google: { model: 'gemini-2.5-flash-lite' },
+    },
+    {
+      mistral: { model: 'mistral-small-latest' },
+    },
+    {
+      anthropic: { model: 'claude-3-5-sonnet-20241022' },
+    },
+  ],
+  judge: {
+    openai: { model: 'gpt-4o-mini' },
+  },
+  prompt: 'What are the top 3 programming languages for 2025 and why?',
+  system: 'You are an expert in technology trends.',
+});
+
+console.log(decision.finalAnswer); // Judge's synthesis of all member responses
+console.log(decision.memberResponses); // All individual model outputs
+console.log(decision.reasoning); // Judge's reasoning for the final answer
+```
+
+**Council Response Structure:**
+
+```ts
+type CouncilDecision = {
+  finalAnswer: string;        // Judge's final synthesized answer
+  memberResponses: {
+    [key: string]: string;    // Each member's response by provider name
+  };
+  reasoning: string;          // Judge's reasoning
+  judge: {
+    provider: string;         // Judge provider (e.g., "openai")
+    model: string;           // Judge model
+  };
+  members: {
+    provider: string;        // Member provider
+    model: string;          // Member model
+  }[];
+}
+```
+
+**Benefits:**
+- **Better decisions** – Multiple perspectives on complex problems
+- **Reduced bias** – Different models have different strengths
+- **Unified response** – Single final answer instead of multiple conflicting outputs
+- **Transparent reasoning** – Judge explains why it chose certain ideas
+- **Parallel execution** – All member calls run in parallel for speed
 
 ---
 
@@ -309,7 +435,7 @@ type StreamOutput = {
     total?: number;          // Total tokens (if available)
   };
   raw: any;                  // Raw provider event object
-  provider: string;          // 'google' | 'openai' | 'deepseek' | 'mistral'
+  provider: string;          // 'google' | 'openai' | 'deepseek' | 'mistral' | 'anthropic'
 }
 ```
 
@@ -337,7 +463,7 @@ if (Symbol.asyncIterator in Object(stream)) {
 
 **Key Benefits:**
 
-- ✅ Same interface for all 4 providers
+- ✅ Same interface for all 5 providers
 - ✅ Always access `chunk.text` for content
 - ✅ Always access `chunk.done` to detect completion
 - ✅ Token info included when provider supports it
@@ -386,6 +512,7 @@ OPENAI_API_KEY=sk-...
 GOOGLE_API_KEY=AIza...
 DEEPSEEK_API_KEY=sk-...
 MISTRAL_API_KEY=...
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 Then load it in your code:
@@ -477,10 +604,12 @@ if (Symbol.asyncIterator in Object(stream)) {
 
 ## Limitations
 
-This is v0.0.3 — early but functional. Currently:
+This is v0.0.4 — early but functional. Currently:
 
 - Single-turn text generation (no multi-turn conversation history yet)
 - Streaming returns unified `StreamOutput` objects (consistent across all providers)
+- Fallback limited to non-streaming calls only
+- LLM Council judge runs sequentially after all members complete
 - No function calling / tool use yet
 - No JSON mode / structured output yet
 
@@ -493,9 +622,10 @@ Future versions will include:
 - Multi-turn conversation management
 - Structured output helpers
 - Function calling across providers
+- Automatic model selection based on task complexity
 - Rate limiting & caching
 - React/Next.js hooks
-- More providers (Anthropic, Azure, etc.)
+- More providers (Azure, Cohere, Ollama, etc.)
 
 ---
 
