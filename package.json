@@ -1,6 +1,6 @@
 {
   "name": "dev-ai-sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Universal AI SDK with a single syntax for multiple LLM providers",
   "type": "module",
   "main": "dist/index.js",
