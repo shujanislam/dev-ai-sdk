@@ -95,7 +95,7 @@ export class genChat{
     }
   }
 
-      async councilGenerate(councilProvider: CouncilProvider): Promise<Output> {
+      async councilGenerate(councilProvider: CouncilProvider): Promise<CouncilDecision> {
         try {
           const judge = this.extractAgent(councilProvider.judge);
           
@@ -103,6 +103,10 @@ export class genChat{
           
           if (members.length === 0) {
             throw new SDKError('At least one member agent is required', 'core', 'NO_MEMBERS');
+          }
+
+          if (!judge) {
+            throw new SDKError('Judge agent is required', 'core', 'NO_JUDGE');
           }
          
           // Call all member agents in parallel with the prompt
@@ -126,7 +130,11 @@ export class genChat{
             }
           });
 
-          return judgeResponse;
+          const judgeData = (judgeResponse as Output).data;
+
+          return {
+            decision: judgeData
+          };
         } catch (err) {
           if (err instanceof SDKError) {
             throw err;

@@ -6,7 +6,7 @@ export async function* mistralStreamProvider(
   apiKey: string,
 ): AsyncGenerator<StreamOutput> {
   if (!provider.mistral) {
-    throw new SDKError('mistral provider config missing', 'mistral');
+    throw new SDKError('mistral provider config missing', 'mistral', 'CONFIG_ERROR');
   }
 
   const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -37,7 +37,7 @@ export async function* mistralStreamProvider(
     } catch {
       // ignore JSON parse failures here
     }
-    throw new SDKError(message, 'mistral');
+    throw new SDKError(message, 'mistral', 'API_ERROR');
   }
 
   const reader = res.body.getReader();

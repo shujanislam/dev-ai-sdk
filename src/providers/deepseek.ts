@@ -3,7 +3,7 @@ import { SDKError } from '../core/error';
 
 export async function deepseekProvider(provider: Provider, apiKey: string): Promise<Output> {
   if (!provider.deepseek) {
-    throw new SDKError('deepseek provider config missing', 'deepseek');
+    throw new SDKError('deepseek provider config missing', 'deepseek', 'CONFIG_ERROR');
   }
 
   const res = await fetch("https://api.deepseek.com/chat/completions", {
@@ -28,7 +28,7 @@ export async function deepseekProvider(provider: Provider, apiKey: string): Prom
   const data = await res.json();
 
   if (!res.ok) {
-    throw new SDKError(`Deepseek error ${res.status}: ${JSON.stringify(data)}`, 'deepseek');
+    throw new SDKError(`Deepseek error ${res.status}: ${JSON.stringify(data)}`, 'deepseek', 'API_ERROR');
   }
 
   const text =

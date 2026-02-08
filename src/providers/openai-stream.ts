@@ -6,7 +6,7 @@ export async function* openaiStreamProvider(
   apiKey: string,
 ): AsyncGenerator<StreamOutput> {
   if (!provider.openai) {
-    throw new SDKError('openai provider config missing', 'openai');
+    throw new SDKError('openai provider config missing', 'openai', 'CONFIG_ERROR');
   }
 
   const res = await fetch('https://api.openai.com/v1/responses', {
@@ -32,7 +32,7 @@ export async function* openaiStreamProvider(
     } catch {
       // ignore JSON parse failures here
     }
-    throw new SDKError(message, 'openai');
+    throw new SDKError(message, 'openai', 'API_ERROR');
   }
 
   const reader = res.body.getReader();

@@ -3,7 +3,7 @@ import { SDKError } from '../core/error';
 
 export async function googleCoreProvider(provider: Provider, apiKey: string): Promise<Output> {
   if (!provider.google) {
-    throw new SDKError('google provider config missing', 'google');
+    throw new SDKError('google provider config missing', 'google', 'CONFIG_ERROR');
   }
 
   const res = await fetch(
@@ -36,7 +36,7 @@ export async function googleCoreProvider(provider: Provider, apiKey: string): Pr
 
   if (!res.ok) {
     const msg = rawData?.error?.message ?? 'Gemini error';
-    throw new SDKError('google', 'API_ERROR', `Gemini error ${msg}`);
+     throw new SDKError(`Gemini error ${msg}`, 'google', 'API_ERROR');
   }
 
   const data = rawData.candidates?.[0]?.content?.parts?.[0]?.text ?? '';

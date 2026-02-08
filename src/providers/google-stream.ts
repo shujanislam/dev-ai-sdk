@@ -6,7 +6,7 @@ export async function* googleStreamProvider(
   apiKey: string,
 ): AsyncGenerator<StreamOutput> {
   if (!provider.google) {
-    throw new SDKError('google provider config missing', 'google');
+    throw new SDKError('google provider config missing', 'google', 'CONFIG_ERROR');
   }
 
   const res = await fetch(
@@ -43,7 +43,7 @@ export async function* googleStreamProvider(
     } catch {
       // ignore JSON parse errors here
     }
-    throw new SDKError(message, 'google');
+    throw new SDKError(message, 'google', 'API_ERROR');
   }
 
    const reader = res.body.getReader();

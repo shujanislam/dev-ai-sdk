@@ -3,7 +3,7 @@ import { SDKError } from '../core/error';
 
 export async function mistralProvider(provider: Provider, apiKey: string): Promise<Output> {
   if (!provider.mistral) {
-    throw new SDKError('mistral provider config missing', 'mistral');
+    throw new SDKError('mistral provider config missing', 'mistral', 'CONFIG_ERROR');
   }
 
   const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
@@ -28,7 +28,7 @@ export async function mistralProvider(provider: Provider, apiKey: string): Promi
   const data = await res.json();
 
   if (!res.ok) {
-    throw new SDKError(`Mistral error ${res.status}: ${JSON.stringify(data)}`, 'mistral');
+    throw new SDKError(`Mistral error ${res.status}: ${JSON.stringify(data)}`, 'mistral', 'API_ERROR');
   }
 
   const text = data.choices?.[0]?.message?.content ?? '';

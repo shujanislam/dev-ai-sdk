@@ -6,7 +6,7 @@ export async function* deepseekStreamProvider(
   apiKey: string,
 ): AsyncGenerator<StreamOutput> {
   if (!provider.deepseek) {
-    throw new SDKError('deepseek provider config missing', 'deepseek');
+    throw new SDKError('deepseek provider config missing', 'deepseek', 'CONFIG_ERROR');
   }
 
   const res = await fetch('https://api.deepseek.com/chat/completions', {
@@ -37,7 +37,7 @@ export async function* deepseekStreamProvider(
     } catch {
       // ignore JSON parse failures here
     }
-    throw new SDKError(message, 'deepseek');
+    throw new SDKError(message, 'deepseek', 'API_ERROR');
   }
 
   const reader = res.body.getReader();
