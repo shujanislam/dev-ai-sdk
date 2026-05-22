@@ -1,0 +1,16 @@
+{
+  "name": "dev-ai-sdk-express-example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Basic Express REST API example using dev-ai-sdk",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "dev-ai-sdk": "file:../..",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2"
+  }
+}

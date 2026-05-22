@@ -1,0 +1,17 @@
+{
+  "name": "dev-ai-sdk-next-example",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simple Next.js example using dev-ai-sdk",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "dev-ai-sdk": "file:../..",
+    "next": "14.2.33",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
