@@ -1,3 +1,5 @@
+![dev-ai-sdk Banner](./assets/dev-ai-sdk-banner.png)
+
 # dev-ai-sdk
 
 **A unified TypeScript SDK for using multiple AI providers with one simple interface.**
