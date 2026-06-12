@@ -35,6 +35,17 @@ export class genChat{
     
     const hasTool = this.hasTools(provider);
 
+    const isStreaming =
+      provider.google?.stream === true ||
+      provider.openai?.stream === true ||
+      provider.deepseek?.stream === true ||
+      provider.mistral?.stream === true ||
+      provider.anthropic?.stream === true;
+
+    if (hasTool && isStreaming) {
+      throw new SDKError('Tools are not supported with streaming yet', 'core', 'TOOLS_NOT_SUPPORTED');
+    }
+
     try {
       if (provider.google) {
         if (provider.google.stream === true) {
@@ -73,13 +84,6 @@ export class genChat{
 
        throw new SDKError('No provider passed', 'core', 'NO_PROVIDER');
     } catch (err) {
-      const isStreaming =
-        provider.google?.stream === true ||
-        provider.openai?.stream === true ||
-        provider.deepseek?.stream === true ||
-        provider.mistral?.stream === true ||
-        provider.anthropic?.stream === true;
-
       if (
         !isStreaming &&
         err instanceof SDKError &&
@@ -182,10 +186,9 @@ export class genChat{
       return !!(
         provider.google?.tool?.length ||
         provider.openai?.tool?.length ||
-      provider.deepseek?.tool?.length ||
-      provider.mistral?.tool?.length ||
-      provider.anthropic?.tool?.length
-    );
-  }
+        provider.deepseek?.tool?.length ||
+        provider.mistral?.tool?.length ||
+        provider.anthropic?.tool?.length
+      );
+    }
 }
-

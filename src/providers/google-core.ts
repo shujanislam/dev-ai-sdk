@@ -67,12 +67,16 @@ export async function googleCoreProvider(provider: Provider, apiKey: string): Pr
 
   if (!res.ok) {
     const msg = rawData?.error?.message ?? 'Gemini error';
-     throw new SDKError(`Gemini error ${msg}`, 'google', 'API_ERROR');
+    throw new SDKError(`Gemini error ${msg}`, 'google', 'API_ERROR');
   }
 
   const functionCall = getFunctionCall(rawData);
 
   if (functionCall) {
+    if (!functionCall.name) {
+      throw new SDKError('Gemini function call missing tool name', 'google', 'TOOL_CALL_ERROR');
+    }
+
     const toolResult = await executeTool(
       provider.google.tool,
       functionCall.name,
