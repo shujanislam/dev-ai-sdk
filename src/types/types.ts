@@ -1,3 +1,8 @@
+type ToolConfig = {
+  description?: string;
+  execute?: any;
+}
+
 export type Provider = {
   google?: {
     model: string;
