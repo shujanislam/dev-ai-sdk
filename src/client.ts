@@ -33,6 +33,8 @@ export class genChat{
    async generate(provider: Provider): Promise<Output | AsyncGenerator<StreamOutput>> {
     validateProvider(provider);
     
+    const hasTool = this.hasTools(provider);
+
     try {
       if (provider.google) {
         if (provider.google.stream === true) {
@@ -175,5 +177,15 @@ export class genChat{
       
       return extractedAgents;
     }
+
+    private hasTools(provider: Provider): boolean {
+      return !!(
+        provider.google?.tool?.length ||
+        provider.openai?.tool?.length ||
+      provider.deepseek?.tool?.length ||
+      provider.mistral?.tool?.length ||
+      provider.anthropic?.tool?.length
+    );
+  }
 }
 

@@ -1,6 +1,8 @@
 export type ToolConfig = {
-  description?: string;
-  execute?: any;
+  name: string;
+  description: string;
+  parameters: Record<string, any>;
+  execute: (args: any) => Promise<any> | any;
 }
 
 export type Provider = {
