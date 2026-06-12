@@ -26,6 +26,44 @@ function getFunctionCall(data: any) {
   return data.candidates?.[0]?.content?.parts?.find((part: any) => part.functionCall)?.functionCall;
 }
 
+function toOutput(data: string, rawData: any, provider: Provider): Output {
+  if (!provider.google) {
+    throw new SDKError('google provider config missing', 'google', 'CONFIG_ERROR');
+  }
+
+  const output: Output = {
+    data,
+    provider: 'google',
+    model: provider.google.model,
+  };
+
+  if (provider.google.raw === true) {
+    output.raw = rawData;
+  }
+
+  return output;
+}
+
+async function generateGeminiContent(url: string, apiKey: string, body: Record<string, any>) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const msg = data?.error?.message ?? 'Gemini error';
+    throw new SDKError(`Gemini error ${msg}`, 'google', 'API_ERROR');
+  }
+
+  return data;
+}
+
 export async function googleCoreProvider(provider: Provider, apiKey: string): Promise<Output> {
   if (!provider.google) {
     throw new SDKError('google provider config missing', 'google', 'CONFIG_ERROR');
@@ -34,41 +72,24 @@ export async function googleCoreProvider(provider: Provider, apiKey: string): Pr
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${provider.google.model}:generateContent`;
   const inputText = `${provider.google.system ?? ''} ${provider.google.prompt}`;
   const tools = toGoogleTools(provider.google.tool);
-
-  const res = await fetch(
-    url,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
+  const generationConfig = {
+    temperature: provider.google.temperature,
+    maxOutputTokens: provider.google.maxTokens,
+  };
+  const userContent = {
+    role: 'user',
+    parts: [
+      {
+        text: inputText,
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: inputText,
-              },
-            ],
-          },
-        ],
-        tools,
-        generationConfig: {
-          temperature: provider.google.temperature,
-          maxOutputTokens: provider.google.maxTokens,
-        },
-      }),
-    },
-  );
+    ],
+  };
 
-  const rawData = await res.json();
-
-  if (!res.ok) {
-    const msg = rawData?.error?.message ?? 'Gemini error';
-    throw new SDKError(`Gemini error ${msg}`, 'google', 'API_ERROR');
-  }
+  const rawData = await generateGeminiContent(url, apiKey, {
+    contents: [userContent],
+    tools,
+    generationConfig,
+  });
 
   const functionCall = getFunctionCall(rawData);
 
@@ -83,84 +104,38 @@ export async function googleCoreProvider(provider: Provider, apiKey: string): Pr
       functionCall.args ?? {},
     );
 
-    const finalRes = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: inputText,
-              },
-            ],
-          },
-          rawData.candidates?.[0]?.content,
-          {
-            role: 'function',
-            parts: [
-              {
-                functionResponse: {
-                  name: functionCall.name,
-                  response: {
-                    result: toolResult,
-                  },
+    const modelContent = rawData.candidates?.[0]?.content;
+
+    if (!modelContent) {
+      throw new SDKError('Gemini function call missing model content', 'google', 'TOOL_CALL_ERROR');
+    }
+
+    const finalRawData = await generateGeminiContent(url, apiKey, {
+      contents: [
+        userContent,
+        modelContent,
+        {
+          role: 'function',
+          parts: [
+            {
+              functionResponse: {
+                name: functionCall.name,
+                response: {
+                  result: toolResult,
                 },
               },
-            ],
-          },
-        ],
-        tools,
-        generationConfig: {
-          temperature: provider.google.temperature,
-          maxOutputTokens: provider.google.maxTokens,
+            },
+          ],
         },
-      }),
+      ],
+      tools,
+      generationConfig,
     });
 
-    const finalRawData = await finalRes.json();
-
-    if (!finalRes.ok) {
-      const msg = finalRawData?.error?.message ?? 'Gemini error';
-      throw new SDKError(`Gemini error ${msg}`, 'google', 'API_ERROR');
-    }
-
     const finalData = getText(finalRawData);
-
-    if (provider.google.raw === true) {
-      return {
-        data: finalData,
-        provider: 'google',
-        model: provider.google.model,
-        raw: finalRawData,
-      };
-    }
-
-    return {
-      data: finalData,
-      provider: 'google',
-      model: provider.google.model,
-    };
+    return toOutput(finalData, finalRawData, provider);
   }
 
   const data = getText(rawData);
-
-  if (provider.google.raw === true) {
-    return {
-      data,
-      provider: 'google',
-      model: provider.google.model,
-      raw: rawData,
-    };
-  }
-
-  return {
-    data,
-    provider: 'google',
-    model: provider.google.model,
-  };
+  return toOutput(data, rawData, provider);
 }

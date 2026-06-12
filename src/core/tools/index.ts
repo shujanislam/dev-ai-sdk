@@ -8,5 +8,14 @@ export async function executeTool(tools: ToolConfig[] | undefined, toolName: str
     throw new SDKError(`Tool not found: ${toolName}`, 'core', 'TOOL_NOT_FOUND');
   }
 
-  return await tool.execute(args);
+  try {
+    return await tool.execute(args);
+  } catch (err) {
+    if (err instanceof SDKError) {
+      throw err;
+    }
+
+    const message = err instanceof Error ? err.message : 'Unknown tool execution error';
+    throw new SDKError(`Tool execution failed for ${toolName}: ${message}`, 'core', 'TOOL_EXECUTION_ERROR');
+  }
 }
