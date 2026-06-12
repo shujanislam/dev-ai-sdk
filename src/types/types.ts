@@ -1,4 +1,4 @@
-type ToolConfig = {
+export type ToolConfig = {
   description?: string;
   execute?: any;
 }
@@ -7,6 +7,7 @@ export type Provider = {
   google?: {
     model: string;
     prompt: string;
+    tool?: ToolConfig[];
     system?: string;
     temperature?: number;
     maxTokens?: number;
@@ -17,6 +18,7 @@ export type Provider = {
   openai?: {
     model: string;
     prompt: string;
+    tool?: ToolConfig[];
     system?: string;
     temperature?: number;
     maxTokens?: number;
@@ -27,6 +29,7 @@ export type Provider = {
   deepseek?: {
     model: string;
     prompt: string;
+    tool?: ToolConfig[];
     system?: string;
     temperature?: number;
     maxTokens?: number;
@@ -37,6 +40,7 @@ export type Provider = {
   mistral?: {
     model: string;
     prompt: string;
+    tool?: ToolConfig[];
     system?: string;
     temperature?: number;
     maxTokens?: number;
@@ -47,6 +51,7 @@ export type Provider = {
   anthropic?: {
     model: string;
     prompt: string;
+    tool?: ToolConfig[];
     system?: string;
     temperature?: number;
     maxTokens?: number;
