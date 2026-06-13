@@ -46,4 +46,74 @@ describe('validateProvider', () => {
       expect(() => validateProvider({ [provider]: { model: 'model', prompt: ' ' } })).toThrow(`${provider}.prompt is required`);
     },
   );
+
+  it('accepts valid tool config', () => {
+    expect(() => validateProvider({
+      google: {
+        model: 'model',
+        prompt: 'prompt',
+        tool: [
+          {
+            name: 'readFile',
+            description: 'Read a file',
+            parameters: { type: 'object' },
+            execute: () => 'ok',
+          },
+        ],
+      },
+    })).not.toThrow();
+  });
+
+  it('rejects invalid tool config', () => {
+    expect(() => validateProvider({
+      google: {
+        model: 'model',
+        prompt: 'prompt',
+        tool: [
+          {
+            name: '',
+            description: 'Read a file',
+            parameters: { type: 'object' },
+            execute: () => 'ok',
+          },
+        ],
+      },
+    })).toThrow('google.tool[0].name is required');
+
+    expect(() => validateProvider({
+      google: {
+        model: 'model',
+        prompt: 'prompt',
+        tool: [
+          {
+            name: 'same',
+            description: 'First',
+            parameters: { type: 'object' },
+            execute: () => 'ok',
+          },
+          {
+            name: 'same',
+            description: 'Second',
+            parameters: { type: 'object' },
+            execute: () => 'ok',
+          },
+        ],
+      },
+    })).toThrow('google.tool contains duplicate tool name: same');
+
+    expect(() => validateProvider({
+      google: {
+        model: 'model',
+        prompt: 'prompt',
+        tool: [
+          {
+            name: 'bad',
+            description: 'Bad execute',
+            parameters: { type: 'object' },
+            execute: 'not-a-function',
+          } as any,
+        ],
+      },
+    })).toThrow('google.tool[0].execute must be a function');
+  });
 });

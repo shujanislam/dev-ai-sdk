@@ -31,7 +31,7 @@ describe('non-streaming providers', () => {
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': 'key' },
     }));
     expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
-      contents: [{ parts: [{ text: 'sys prompt' }] }],
+      contents: [{ role: 'user', parts: [{ text: 'sys prompt' }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 10 },
     });
     expect(result).toEqual({ data: 'hello', provider: 'google', model: 'gemini', raw });

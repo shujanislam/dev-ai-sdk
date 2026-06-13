@@ -4,7 +4,7 @@
 
 **A unified TypeScript SDK for using multiple AI providers with one simple interface.**
 
-Stop juggling different API docs and client libraries. `dev-ai-sdk` lets you switch between OpenAI, Google Gemini, DeepSeek, Mistral, and Anthropic Claude with zero code changes. Supports streaming, automatic fallback, and multi-model LLM councils.
+Stop juggling different API docs and client libraries. `dev-ai-sdk` lets you switch between OpenAI, Google Gemini, DeepSeek, Mistral, and Anthropic Claude with zero code changes. Supports streaming, automatic fallback, Google Gemini tool calling, and multi-model LLM councils.
 
 ---
 
@@ -68,6 +68,7 @@ That's it. No complex setup, no provider-specific boilerplate.
 ✅ **Streaming** – Built-in streaming support for all providers  
 ✅ **Automatic Fallback** – If a provider fails, automatically try others  
 ✅ **LLM Council** – Run multiple models in parallel, have a judge synthesize the best answer  
+✅ **Tool Calling** – Let Google Gemini call local TypeScript functions like file read/write/list tools  
 ✅ **Error Handling** – Unified error handling across all providers  
 ✅ **No Dependencies** – Only `dotenv` for environment variables  
 
@@ -228,6 +229,114 @@ if (Symbol.asyncIterator in Object(stream)) {
 - **Consistent fields** – Always access `chunk.text`, never worry about provider-specific paths
 - **Access to metadata** – Token counts, completion status, and provider name
 - **Raw access** – `chunk.raw` gives you the full provider event if you need it
+
+---
+
+### Tool Calling
+
+Tool calling lets a model decide when to call local TypeScript functions. The user writes a normal prompt; the SDK sends tool schemas to the provider, executes the selected local function, then sends the result back to the model for the final answer.
+
+Currently, tool calling is wired for non-streaming Google Gemini calls.
+
+```ts
+import { genChat, readFileTool, writeFileTool, listFileTool } from 'dev-ai-sdk';
+
+const ai = new genChat({
+  google: {
+    apiKey: process.env.GOOGLE_API_KEY!,
+  },
+});
+
+const result = await ai.generate({
+  google: {
+    model: 'gemini-2.5-flash',
+    prompt: 'Read package.json and summarize the project.',
+    tool: [
+      {
+        name: 'readFile',
+        description: 'Read a file from the local filesystem.',
+        parameters: {
+          type: 'object',
+          properties: {
+            filePath: {
+              type: 'string',
+              description: 'The path of the file to read.',
+            },
+          },
+          required: ['filePath'],
+        },
+        execute: readFileTool,
+      },
+    ],
+  },
+});
+
+console.log(result.data);
+```
+
+The model receives only the tool schema. The `execute` function stays local in your runtime and is never sent to the provider.
+
+#### Write a File
+
+```ts
+const result = await ai.generate({
+  google: {
+    model: 'gemini-2.5-flash',
+    prompt: 'Write exactly "hello from dev-ai-sdk" to /tmp/hello.txt.',
+    tool: [
+      {
+        name: 'writeFile',
+        description: 'Write content to a file on the local filesystem.',
+        parameters: {
+          type: 'object',
+          properties: {
+            filePath: {
+              type: 'string',
+              description: 'The path of the file to write.',
+            },
+            data: {
+              type: 'string',
+              description: 'The content to write to the file.',
+            },
+          },
+          required: ['filePath', 'data'],
+        },
+        execute: writeFileTool,
+      },
+    ],
+  },
+});
+```
+
+#### List Files
+
+```ts
+const result = await ai.generate({
+  google: {
+    model: 'gemini-2.5-flash',
+    prompt: 'List files in ./src.',
+    tool: [
+      {
+        name: 'listFile',
+        description: 'List files from a local directory.',
+        parameters: {
+          type: 'object',
+          properties: {
+            filePath: {
+              type: 'string',
+              description: 'The directory path to list.',
+            },
+          },
+          required: ['filePath'],
+        },
+        execute: listFileTool,
+      },
+    ],
+  },
+});
+```
+
+Tool calls are not supported with `stream: true` yet. Passing tools with streaming throws a `TOOLS_NOT_SUPPORTED` SDK error.
 
 ---
 
@@ -420,6 +529,20 @@ All providers support:
 | `maxTokens` | number | ❌ | — | Max response length in tokens |
 | `stream` | boolean | ❌ | false | Stream responses in real-time |
 | `raw` | boolean | ❌ | false | Include full provider response |
+| `tool` | `ToolConfig[]` | ❌ | — | Local tools the model can call. Currently supported for non-streaming Google Gemini |
+
+### ToolConfig Type
+
+```ts
+type ToolConfig = {
+  name: string;
+  description: string;
+  parameters: Record<string, any>;
+  execute: (args: any) => Promise<any> | any;
+}
+```
+
+Tool validation requires unique names, a description, a parameters object, and an executable function.
 
 ---
 
@@ -501,6 +624,8 @@ Common errors:
 - **Invalid model name** – Check provider documentation for valid models
 - **Empty prompt** – Prompt must be a non-empty string
 - **Invalid request** – Only pass one provider per request (not multiple)
+- **Invalid tool config** – Tool names, descriptions, parameters, and execute functions are validated before calling the provider
+- **Tool execution failure** – Tool errors are wrapped in `SDKError` with `TOOL_EXECUTION_ERROR` or file-tool-specific codes
 
 ---
 
@@ -612,7 +737,7 @@ This is v0.0.4 — early but functional. Currently:
 - Streaming returns unified `StreamOutput` objects (consistent across all providers)
 - Fallback limited to non-streaming calls only
 - LLM Council judge runs sequentially after all members complete
-- No function calling / tool use yet
+- Tool calling is currently implemented for non-streaming Google Gemini only
 - No JSON mode / structured output yet
 
 ---
@@ -623,7 +748,7 @@ Future versions will include:
 
 - Multi-turn conversation management
 - Structured output helpers
-- Function calling across providers
+- Function calling across more providers
 - Automatic model selection based on task complexity
 - Rate limiting & caching
 - React/Next.js hooks
